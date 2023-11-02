@@ -8,6 +8,8 @@
 
 # BLKSNAP - Block Devices Snapshots Module
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/fd7301329a044d22b10827d962d1f00b)](https://app.codacy.com/gh/Fantu/blksnap?utm_source=github.com&utm_medium=referral&utm_content=Fantu/blksnap&utm_campaign=Badge_Grade)
+
 * [Extended description and features](doc/blksnap.md)
 * [Repository structure](#repository-structure)
 * [Licensing](#licensing)
