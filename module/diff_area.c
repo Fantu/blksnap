@@ -108,7 +108,7 @@ static inline void chunk_free(struct diff_area *diff_area, struct chunk *chunk)
 static void diff_area_calculate_chunk_size(struct diff_area *diff_area)
 {
 	unsigned long count;
-	unsigned long shift = get_chunk_minimum_shift();
+	unsigned long shift = PAGE_SHIFT;
 	sector_t capacity;
 	sector_t min_io_sect;
 
@@ -118,18 +118,36 @@ static void diff_area_calculate_chunk_size(struct diff_area *diff_area)
 	pr_debug("Minimal IO block %llu sectors\n", min_io_sect);
 	pr_debug("Device capacity %llu sectors\n", capacity);
 
-	count = count_by_shift(capacity, shift);
-	pr_debug("Chunks count %lu\n", count);
-	while ((count > get_chunk_maximum_count()) ||
-		((1ul << (shift - SECTOR_SHIFT)) < min_io_sect)) {
+	while ((1ul << (shift - SECTOR_SHIFT)) < min_io_sect)
 		shift++;
-		count = count_by_shift(capacity, shift);
-		pr_debug("Chunks count %lu\n", count);
+
+	if (shift >= get_chunk_maximum_shift()) {
+		pr_info("The maximum allowable chunk size [%lu] has been reached.\n",
+			1ul << shift);
+		goto out;
 	}
 
+	if (shift < get_chunk_minimum_shift())
+		shift = get_chunk_minimum_shift();
+
+	while (count_by_shift(capacity, shift) > get_chunk_maximum_count()) {
+		if (shift >= get_chunk_maximum_shift()) {
+			shift = get_chunk_maximum_shift();
+			pr_info("The maximum allowable chunk size [%lu] has been reached.\n",
+				1ul << shift);
+			goto out;
+		}
+		shift++;
+	}
+out:
 	diff_area->chunk_shift = shift;
 	diff_area->chunk_count = (unsigned long)DIV_ROUND_UP_ULL(capacity,
 					(1ul << (shift - SECTOR_SHIFT)));
+
+	pr_debug("The optimal chunk size was calculated as %llu bytes for device [%d:%d]\n",
+		 (1ull << diff_area->chunk_shift),
+		 MAJOR(diff_area->orig_bdev->bd_dev),
+		 MINOR(diff_area->orig_bdev->bd_dev));
 }
 
 void diff_area_free(struct kref *kref)
@@ -365,15 +383,6 @@ struct diff_area *diff_area_new(struct tracker *tracker,
 	diff_area->diff_storage = diff_storage;
 
 	diff_area_calculate_chunk_size(diff_area);
-	if (diff_area->chunk_shift > get_chunk_maximum_shift()) {
-		pr_info("The maximum allowable chunk size has been reached.\n");
-		ret = -EFAULT;
-		goto out_bdev_close;
-	}
-	pr_debug("The optimal chunk size was calculated as %llu bytes for device [%d:%d]\n",
-		 (1ull << diff_area->chunk_shift),
-		 MAJOR(diff_area->orig_bdev->bd_dev),
-		 MINOR(diff_area->orig_bdev->bd_dev));
 
 	xa_init(&diff_area->chunk_map);
 
