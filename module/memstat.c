@@ -16,6 +16,7 @@ struct memstat_class {
 	int line;
 	atomic64_t count;
 	atomic64_t total_size;
+	bool too_much;
 };
 
 struct memstat_obj {
@@ -119,6 +120,7 @@ void *memstat_kmalloc(const char *file, const int line, size_t size, gfp_t flags
 		class->line = line;
 		atomic64_set(&class->count, 0);
 		atomic64_set(&class->total_size, 0);
+		class->too_much = false;
 
 		ret = xa_insert(&memstat_class_map, inx, class, GFP_KERNEL);
 		if (unlikely(ret)) {
@@ -135,6 +137,12 @@ void *memstat_kmalloc(const char *file, const int line, size_t size, gfp_t flags
 	obj->class = class;
 	atomic64_inc(&class->count);
 	atomic64_add(size, &class->total_size);
+
+	if (unlikely(!class->too_much && (atomic64_read(&class->count) > 10000))) {
+		class->too_much = true;
+		pr_warn("Allocated up to 10000 objects at %s:%d\n",
+			class->file, class->line);
+	}
 out:
 	return ptr;
 }
