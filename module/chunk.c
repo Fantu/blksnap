@@ -88,10 +88,7 @@ static void chunk_schedule_storing(struct chunk *chunk)
 	list_add_tail(&chunk->link, &diff_area->store_queue);
 
 	need_work = (atomic_inc_return(&diff_area->store_queue_count) >
-		     get_chunk_maximum_in_queue()) &&
-		     !diff_area->store_queue_processing;
-	if (need_work)
-		diff_area->store_queue_processing = true;
+		     get_chunk_maximum_in_queue());
 	spin_unlock(&diff_area->store_queue_lock);
 
 	chunk_up(chunk);

@@ -206,8 +206,6 @@ static inline bool diff_area_store_one(struct diff_area *diff_area)
 		 * currently in use, and we try to clean up the next chunk.
 		 */
 	}
-	if (!chunk)
-		diff_area->store_queue_processing = false;
 	spin_unlock(&diff_area->store_queue_lock);
 	if (!chunk)
 		return false;
@@ -412,7 +410,6 @@ struct diff_area *diff_area_new(struct tracker *tracker,
 	diff_area->physical_blksz = bdev_physical_block_size(diff_area->orig_bdev);
 	diff_area->logical_blksz = bdev_logical_block_size(diff_area->orig_bdev);
 	diff_area->corrupt_flag = 0;
-	diff_area->store_queue_processing = false;
 
 #ifdef BLKSNAP_STANDALONE
 	atomic64_set(&diff_area->stat_processed, 0);

@@ -56,9 +56,6 @@ struct tracker;
  *	The workqueue work item. This worker stores chunks to the difference
  *	storage freeing up the cache. It's limits the number of chunks that
  *	store their data in RAM.
- * @store_queue_processing:
- *	The flag is an indication that the &diff_area.store_queue_work is
- *	running or has been scheduled to run.
  * @free_diff_buffers_lock:
  *	The spinlock guarantees consistency of the linked lists of free
  *	difference buffers.
@@ -140,7 +137,6 @@ struct diff_area {
 	struct list_head store_queue;
 	atomic_t store_queue_count;
 	struct work_struct store_queue_work;
-	bool store_queue_processing;
 
 	spinlock_t free_diff_buffers_lock;
 	struct list_head free_diff_buffers;
