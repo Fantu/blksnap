@@ -107,7 +107,6 @@ static inline void chunk_free(struct diff_area *diff_area, struct chunk *chunk)
 
 static void diff_area_calculate_chunk_size(struct diff_area *diff_area)
 {
-	unsigned long count;
 	unsigned long shift = PAGE_SHIFT;
 	sector_t capacity;
 	sector_t min_io_sect;
@@ -183,7 +182,9 @@ void diff_area_free(struct kref *kref)
 
 	diff_buffer_cleanup(diff_area);
 	tracker_put(diff_area->tracker);
+#ifdef BLKSNAP_STANDALONE
 	bdev_close(diff_area->orig_bdev_holder);
+#endif
 	ms_kfree(diff_area);
 }
 
@@ -375,8 +376,10 @@ struct diff_area *diff_area_new(struct tracker *tracker,
 	ret = bdev_open(tracker->orig_bdevpath,
 			&diff_area->orig_bdev_holder,
 			&diff_area->orig_bdev);
-	if (ret)
-		goto out_kfree;
+	if (ret) {
+		ms_kfree(diff_area);
+		return ERR_PTR(ret);
+	}
 #else
 	diff_area->orig_bdev = tracker->orig_bdev;
 #endif
@@ -421,17 +424,7 @@ struct diff_area *diff_area_new(struct tracker *tracker,
 	log_histogram_init(&diff_area->image_hg, 4096);
 	log_histogram_init(&diff_area->cow_hg, 4096);
 #endif
-
 	return diff_area;
-
-#ifdef BLKSNAP_STANDALONE
-out_bdev_close:
-	bdev_close(diff_area->orig_bdev_holder);
-#endif
-
-out_kfree:
-	ms_kfree(diff_area);
-	return ERR_PTR(ret);
 }
 
 static inline unsigned int chunk_limit(struct chunk *chunk,
