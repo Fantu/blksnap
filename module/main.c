@@ -569,7 +569,7 @@ static int __init blksnap_init(void)
 	if (ret)
 		goto fail_chunk_init;
 
-	blksnap_wq = alloc_workqueue("blksnap",
+	blksnap_wq = alloc_workqueue("blksnap", WQ_MEM_RECLAIM |
 				      WQ_UNBOUND | WQ_HIGHPRI | WQ_SYSFS, 0);
 	if (!blksnap_wq) {
 		ret = -ENOMEM;

@@ -141,7 +141,7 @@ static inline void check_halffull(struct diff_storage *diff_storage,
 		}
 
 		pr_debug("Diff storage low free space.\n");
-		blksnap_queue_work(&diff_storage->reallocate_work);
+		schedule_work(&diff_storage->reallocate_work);
 	}
 }
 
