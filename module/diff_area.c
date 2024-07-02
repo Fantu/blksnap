@@ -262,8 +262,11 @@ static int diff_area_cow_schedule(struct diff_area *diff_area, struct bio *bio)
 
 	spin_lock(&diff_area->cow_queue_lock);
 	list_add_tail(&task->link, &diff_area->cow_queue);
+	atomic_inc(&diff_area->cow_queue_count);
 	spin_unlock(&diff_area->cow_queue_lock);
 
+	if (unlikely(atomic_read(&diff_area->cow_queue_count) > 10000))
+		pr_warn("Cow queue length up to 10000 items\n");
 	blksnap_queue_work(&diff_area->cow_queue_work);
 	return 0;
 }
@@ -276,8 +279,10 @@ static inline struct bio *diff_area_cow_get_bio(struct diff_area *diff_area)
 	spin_lock(&diff_area->cow_queue_lock);
 	task = list_first_entry_or_null(&diff_area->cow_queue,
 							struct cow_task, link);
-	if (task)
+	if (task) {
 		list_del(&task->link);
+		atomic_dec(&diff_area->cow_queue_count);
+	}
 	spin_unlock(&diff_area->cow_queue_lock);
 
 	if (task) {
@@ -332,8 +337,10 @@ static inline struct chunk_io_ctx *chunk_io_ctx_take(
 	spin_lock(&diff_area->image_io_queue_lock);
 	io_ctx = list_first_entry_or_null(&diff_area->image_io_queue,
 						  struct chunk_io_ctx, link);
-	if (io_ctx)
+	if (io_ctx) {
 		list_del(&io_ctx->link);
+		atomic_dec(&diff_area->image_io_queue_count);
+	}
 	spin_unlock(&diff_area->image_io_queue_lock);
 
 	return io_ctx;
@@ -392,6 +399,7 @@ struct diff_area *diff_area_new(struct tracker *tracker,
 #ifdef CONFIG_BLKSNAP_COW_SCHEDULE
 	spin_lock_init(&diff_area->cow_queue_lock);
 	INIT_LIST_HEAD(&diff_area->cow_queue);
+	atomic_set(&diff_area->cow_queue_count, 0);
 	INIT_WORK(&diff_area->cow_queue_work, diff_area_cow_queue_work);
 #endif
 	spin_lock_init(&diff_area->store_queue_lock);
@@ -405,6 +413,7 @@ struct diff_area *diff_area_new(struct tracker *tracker,
 
 	spin_lock_init(&diff_area->image_io_queue_lock);
 	INIT_LIST_HEAD(&diff_area->image_io_queue);
+	atomic_set(&diff_area->image_io_queue_count, 0);
 	INIT_WORK(&diff_area->image_io_work, diff_area_image_io_work);
 
 	diff_area->physical_blksz = bdev_physical_block_size(diff_area->orig_bdev);

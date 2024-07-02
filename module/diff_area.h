@@ -131,6 +131,7 @@ struct diff_area {
 #ifdef CONFIG_BLKSNAP_COW_SCHEDULE
 	spinlock_t cow_queue_lock;
 	struct list_head cow_queue;
+	atomic_t cow_queue_count;
 	struct work_struct cow_queue_work;
 #endif
 	spinlock_t store_queue_lock;
@@ -144,6 +145,7 @@ struct diff_area {
 
 	spinlock_t image_io_queue_lock;
 	struct list_head image_io_queue;
+	atomic_t image_io_queue_count;
 	struct work_struct image_io_work;
 
 	unsigned int physical_blksz;
