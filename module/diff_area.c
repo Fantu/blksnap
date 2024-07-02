@@ -265,8 +265,8 @@ static int diff_area_cow_schedule(struct diff_area *diff_area, struct bio *bio)
 	atomic_inc(&diff_area->cow_queue_count);
 	spin_unlock(&diff_area->cow_queue_lock);
 
-	if (unlikely(atomic_read(&diff_area->cow_queue_count) > 10000))
-		pr_warn("Cow queue length up to 10000 items\n");
+	WARN_ONCE(atomic_read(&diff_area->cow_queue_count) > 10000,
+		"Cow queue length up to 10000 items");
 	blksnap_queue_work(&diff_area->cow_queue_work);
 	return 0;
 }

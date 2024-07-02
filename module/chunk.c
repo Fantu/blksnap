@@ -94,8 +94,8 @@ static void chunk_schedule_storing(struct chunk *chunk)
 	chunk_up(chunk);
 
 	if (need_work) {
-		if (unlikely(atomic_read(&diff_area->store_queue_count) > 10000))
-			pr_warn("Store queue already have up to 10000 items\n");
+		WARN_ONCE(atomic_read(&diff_area->store_queue_count) > 10000,
+			"Store queue already have up to 10000 items");
 		blksnap_queue_work(&diff_area->store_queue_work);
 	}
 	diff_area_put(diff_area);
@@ -354,8 +354,8 @@ static inline void chunk_diff_bio_schedule(struct diff_area *diff_area,
 	atomic_inc(&diff_area->image_io_queue_count);
 	spin_unlock(&diff_area->image_io_queue_lock);
 
-	if (unlikely(atomic_read(&diff_area->image_io_queue_count) > 10000)),
-		pr_warn("Image I/O queue length up to 10000\n");
+	WARN_ONCE(atomic_read(&diff_area->image_io_queue_count) > 10000,
+		"Image I/O queue length up to 10000");
 	blksnap_queue_work(&diff_area->image_io_work);
 }
 
