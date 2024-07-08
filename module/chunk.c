@@ -117,6 +117,8 @@ void chunk_copy_bio(struct chunk *chunk, struct bio *bio,
 		struct page *page = chunk->diff_buffer->bvec[inx].bv_page;
 		unsigned int len;
 
+		BUG_ON(inx >= chunk->diff_buffer->nr_pages); //DEBUG
+
 		len = min3(bvec.bv_len,
 			   chunk_left,
 			   (unsigned int)PAGE_SIZE - page_ofs);

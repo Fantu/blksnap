@@ -25,6 +25,7 @@ static void diff_buffer_free(struct diff_buffer *diff_buffer)
 	for (inx = 0; inx < diff_buffer->nr_pages; inx++)
 		__free_page(diff_buffer->bvec[inx].bv_page);
 
+	memset(diff_buffer, 0, sizeof(struct diff_buffer)); //DEBUG
 	ms_kfree(diff_buffer);
 }
 
