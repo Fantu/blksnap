@@ -131,11 +131,7 @@ void chunk_copy_bio(struct chunk *chunk, struct bio *bio,
 
 		chunk_ofs += len;
 		chunk_left -= len;
-#ifdef HAVE_BIO_ADVANCE_ITER_SIMPLE
-		bio_advance_iter_single(bio, iter, len);
-#else
 		bio_advance_iter(bio, iter, len);
-#endif
 	}
 }
 
@@ -774,13 +770,8 @@ bool chunk_load_and_schedule_io(struct chunk *chunk, struct bio *orig_bio)
 	INIT_WORK(&cbio->work, notify_load_and_schedule_io);
 	cbio->orig_bio = orig_bio;
 	cbio->orig_iter = orig_bio->bi_iter;
-#ifdef HAVE_BIO_ADVANCE_ITER_SIMPLE
-	bio_advance_iter_single(orig_bio, &orig_bio->bi_iter,
-				chunk_limit(chunk, orig_bio));
-#else
 	bio_advance_iter(orig_bio, &orig_bio->bi_iter,
 			 chunk_limit(chunk, orig_bio));
-#endif
 	bio_inc_remaining(orig_bio);
 
 

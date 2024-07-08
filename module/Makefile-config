@@ -141,9 +141,6 @@ EXTRA_CFLAGS += $(shell test -f $(srctree)/include/linux/highmem.h  &&		\
 	grep -qw "static inline void memcpy_page" $(srctree)/include/linux/highmem.h && \
 		echo -D HAVE_MEMCPY_PAGE)
 EXTRA_CFLAGS += $(shell test -f $(srctree)/include/linux/bio.h  &&		\
-	grep -qw "static inline void bio_advance_iter_single" $(srctree)/include/linux/bio.h && \
-		echo -D HAVE_BIO_ADVANCE_ITER_SIMPLE)
-EXTRA_CFLAGS += $(shell test -f $(srctree)/include/linux/bio.h  &&		\
 	grep -qw "struct bio \*bio_alloc_clone" $(srctree)/include/linux/bio.h && \
 		echo -D HAVE_BIO_ALLOC_CLONE)
 EXTRA_CFLAGS += $(shell test -f $(srctree)/include/linux/bio.h  &&		\

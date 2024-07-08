@@ -531,11 +531,7 @@ bool diff_area_cow_process_bio(struct diff_area *diff_area, struct bio *bio)
 		chunk->diff_area = diff_area_get(diff_area);
 
 		len = chunk_limit(chunk, &iter);
-#ifdef HAVE_BIO_ADVANCE_ITER_SIMPLE
-		bio_advance_iter_single(bio, &iter, len);
-#else
 		bio_advance_iter(bio, &iter, len);
-#endif
 
 		if (chunk->state == CHUNK_ST_NEW) {
 			if (nowait) {
