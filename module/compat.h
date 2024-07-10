@@ -21,6 +21,7 @@ static inline void memcpy_page(struct page *dst_page, size_t dst_off,
 	char *dst = kmap_atomic(dst_page);
 	char *src = kmap_atomic(src_page);
 
+	VM_BUG_ON(dst_off + len > PAGE_SIZE || src_off + len > PAGE_SIZE);
 	memcpy(dst + dst_off, src + src_off, len);
 	kunmap_atomic(src);
 	kunmap_atomic(dst);

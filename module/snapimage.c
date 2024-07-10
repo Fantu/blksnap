@@ -151,11 +151,12 @@ static void snapimage_submit_bio(struct bio *bio)
 #if !defined(BLKSNAP_STANDALONE)
 	current->blk_filter = prev_filter;
 #endif
+	memalloc_noio_restore(flags);
+
 	if (is_success)
 		bio_endio(bio);
 	else
 		bio_io_error(bio);
-	memalloc_noio_restore(flags);
 #if defined(HAVE_QC_SUBMIT_BIO_NOACCT)
 	return BLK_QC_T_NONE;
 #endif

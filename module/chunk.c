@@ -433,10 +433,12 @@ static void notify_load_and_schedule_io(struct work_struct *work)
 	while ((chunk = get_chunk_from_cbio(cbio))) {
 		if (unlikely(cbio->bio.bi_status != BLK_STS_OK)) {
 			chunk_store_failed(chunk, -EIO);
+			bio_io_error(cbio->orig_bio);
 			continue;
 		}
 		if (chunk->state == CHUNK_ST_FAILED) {
 			chunk_up(chunk);
+			bio_io_error(cbio->orig_bio);
 			continue;
 		}
 
