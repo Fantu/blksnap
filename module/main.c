@@ -101,7 +101,7 @@ static unsigned int chunk_maximum_shift = 26;
  * of storing a chunks data to the difference storage and perform it later in
  * the worker thread.
  */
-static unsigned int chunk_maximum_in_queue = 16;
+static unsigned int chunk_maximum_in_queue = 256;
 
 /*
  * The size of the pool of preallocated difference buffers.

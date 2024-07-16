@@ -149,6 +149,27 @@ out:
 		 MINOR(diff_area->orig_bdev->bd_dev));
 }
 
+static void diff_area_skip_store_queue(struct diff_area *diff_area)
+{
+	struct chunk *chunk = NULL;
+
+	do {
+		spin_lock(&diff_area->store_queue_lock);
+		chunk = list_first_entry_or_null(&diff_area->store_queue,
+						 struct chunk, link);
+		if (chunk) {
+			atomic_dec(&diff_area->store_queue_count);
+			list_del_init(&chunk->link);
+		}
+		spin_unlock(&diff_area->store_queue_lock);
+
+		if (likely(chunk && chunk->diff_buffer)) {
+			diff_buffer_release(diff_area, chunk->diff_buffer);
+			chunk->diff_buffer = NULL;
+		}
+	} while (chunk);
+}
+
 void diff_area_free(struct kref *kref)
 {
 	unsigned long inx = 0;
@@ -157,6 +178,8 @@ void diff_area_free(struct kref *kref)
 
 	might_sleep();
 	diff_area = container_of(kref, struct diff_area, kref);
+
+	diff_area_skip_store_queue(diff_area);
 
 	xa_for_each(&diff_area->chunk_map, inx, chunk) {
 		if (chunk)
@@ -310,10 +333,8 @@ static void diff_area_cow_queue_work(struct work_struct *work)
 	}
 }
 #endif
-static void diff_area_store_queue_work(struct work_struct *work)
+void diff_area_store_queue(struct diff_area *diff_area)
 {
-	struct diff_area *diff_area = container_of(
-		work, struct diff_area, store_queue_work);
 	unsigned int old_nofs;
 #if !defined(BLKSNAP_STANDALONE)
 	struct blkfilter *prev_filter = current->blk_filter;
@@ -405,7 +426,6 @@ struct diff_area *diff_area_new(struct tracker *tracker,
 	spin_lock_init(&diff_area->store_queue_lock);
 	INIT_LIST_HEAD(&diff_area->store_queue);
 	atomic_set(&diff_area->store_queue_count, 0);
-	INIT_WORK(&diff_area->store_queue_work, diff_area_store_queue_work);
 
 	spin_lock_init(&diff_area->free_diff_buffers_lock);
 	INIT_LIST_HEAD(&diff_area->free_diff_buffers);

@@ -77,7 +77,7 @@ static inline void chunk_io_failed(struct chunk *chunk)
 	chunk_up(chunk);
 }
 
-static void chunk_schedule_storing(struct chunk *chunk)
+static void chunk_store(struct chunk *chunk)
 {
 	struct diff_area *diff_area = diff_area_get(chunk->diff_area);
 	bool need_work = false;
@@ -98,7 +98,8 @@ static void chunk_schedule_storing(struct chunk *chunk)
 	if (need_work) {
 		WARN_ONCE(atomic_read(&diff_area->store_queue_count) > 10000,
 			"Store queue already have up to 10000 items");
-		blksnap_queue_work(&diff_area->store_queue_work);
+
+		diff_area_store_queue(diff_area);
 	}
 	diff_area_put(diff_area);
 }
@@ -448,7 +449,7 @@ static void notify_load_and_schedule_io(struct work_struct *work)
 		chunk_copy_bio(chunk, cbio->orig_bio, &cbio->orig_iter);
 		bio_endio(cbio->orig_bio);
 
-		chunk_schedule_storing(chunk);
+		chunk_store(chunk);
 	}
 
 	bio_put(&cbio->bio);
@@ -469,7 +470,7 @@ static void notify_load_and_postpone_io(struct work_struct *work)
 			continue;
 		}
 
-		chunk_schedule_storing(chunk);
+		chunk_store(chunk);
 	}
 
 	/* re submit filtered original bio */

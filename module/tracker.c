@@ -388,7 +388,6 @@ void tracker_release_snapshot(struct tracker *tracker)
 	flush_work(&diff_area->cow_queue_work);
 #endif
 	flush_work(&diff_area->image_io_work);
-	flush_work(&diff_area->store_queue_work);
 
 	diff_area_put(diff_area);
 }
