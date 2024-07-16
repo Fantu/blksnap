@@ -358,6 +358,11 @@ static inline void chunk_diff_bio_schedule(struct diff_area *diff_area,
 	WARN_ONCE(atomic_read(&diff_area->image_io_queue_count) > 10000,
 		"Image I/O queue length up to 10000");
 	blksnap_queue_work(&diff_area->image_io_work);
+
+	while (atomic_read(&diff_area->image_io_queue_count) >=
+						get_chunk_maximum_in_queue()) {
+		io_schedule();
+	}
 }
 
 /*
