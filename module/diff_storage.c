@@ -170,9 +170,10 @@ struct diff_storage *diff_storage_new(void)
 
 void diff_storage_free(struct kref *kref)
 {
-	struct diff_storage *diff_storage;
+	struct diff_storage *diff_storage =
+				container_of(kref, struct diff_storage, kref);
 
-	diff_storage = container_of(kref, struct diff_storage, kref);
+	pr_debug("Release difference storage %p\n", diff_storage);
 	flush_work(&diff_storage->reallocate_work);
 
 	if (diff_storage->bdev_holder)
@@ -203,6 +204,7 @@ void diff_storage_free(struct kref *kref)
 	xa_destroy(&diff_storage->diff_storage_bdev_map);
 #endif /* BLKSNAP_MODIFICATION */
 
+	pr_debug("Difference storage %p has been released\n", diff_storage);
 	ms_kfree(diff_storage);
 }
 

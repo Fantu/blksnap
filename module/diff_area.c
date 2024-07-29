@@ -208,6 +208,7 @@ void diff_area_free(struct kref *kref)
 #ifdef BLKSNAP_STANDALONE
 	bdev_close(diff_area->orig_bdev_holder);
 #endif
+	diff_storage_put(diff_area->diff_storage);
 	ms_kfree(diff_area);
 }
 
@@ -409,7 +410,7 @@ struct diff_area *diff_area_new(struct tracker *tracker,
 #else
 	diff_area->orig_bdev = tracker->orig_bdev;
 #endif
-	diff_area->diff_storage = diff_storage;
+	diff_area->diff_storage = diff_storage_get(diff_storage);
 
 	diff_area_calculate_chunk_size(diff_area);
 

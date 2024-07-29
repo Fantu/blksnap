@@ -88,9 +88,10 @@ struct diff_storage {
 struct diff_storage *diff_storage_new(void);
 void diff_storage_free(struct kref *kref);
 
-static inline void diff_storage_get(struct diff_storage *diff_storage)
+static inline struct diff_storage * diff_storage_get(struct diff_storage *diff_storage)
 {
 	kref_get(&diff_storage->kref);
+	return diff_storage;
 };
 static inline void diff_storage_put(struct diff_storage *diff_storage)
 {
