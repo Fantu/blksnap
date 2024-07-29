@@ -534,7 +534,7 @@ static void chunk_io_endio(struct bio *bio)
 {
 	struct chunk_bio *cbio = container_of(bio, struct chunk_bio, bio);
 
-	queue_work(system_highpri_wq, &cbio->work);
+	blksnap_queue_work(&cbio->work);
 }
 
 static inline void chunk_submit_bio(struct bio *bio)
