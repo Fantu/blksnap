@@ -44,7 +44,7 @@ static struct diff_buffer *diff_buffer_new(size_t nr_pages, size_t size)
 
 	INIT_LIST_HEAD(&diff_buffer->link);
 	diff_buffer->size = size;
-	diff_buffer->nr_pages = nr_pages;
+	diff_buffer->nr_pages = 0;
 
 	for (inx = 0; inx < nr_pages; inx++) {
 		struct page *page = alloc_page(GFP_KERNEL);
@@ -52,6 +52,7 @@ static struct diff_buffer *diff_buffer_new(size_t nr_pages, size_t size)
 		if (!page)
 			goto fail;
 		bvec_set_page(&diff_buffer->bvec[inx], page, PAGE_SIZE, 0);
+		diff_buffer->nr_pages++;
 	}
 	return diff_buffer;
 fail:
