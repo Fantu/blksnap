@@ -208,13 +208,19 @@ int snapimage_create(struct tracker *tracker)
 	struct request_queue *queue;
 	int minor = 0;
 #endif
+#if defined(HAVE_BDEV_QUEUE_LIMITS)
+	struct queue_limits lim = {
+		.physical_block_size = tracker->diff_area->physical_blksz,
+		.logical_block_size = tracker->diff_area->logical_blksz,
+	};
+#endif
 
 	pr_info("Create snapshot image device for original device [%u:%u]\n",
 		MAJOR(dev_id), MINOR(dev_id));
 
 #ifdef HAVE_BLK_ALLOC_DISK
 #if defined(HAVE_BDEV_QUEUE_LIMITS)
-	disk = blk_alloc_disk(NULL, NUMA_NO_NODE);
+	disk = blk_alloc_disk(&lim, NUMA_NO_NODE);
 #else
 	disk = blk_alloc_disk(NUMA_NO_NODE);
 #endif
@@ -267,10 +273,12 @@ int snapimage_create(struct tracker *tracker)
 	}
 	pr_debug("Snapshot image disk name [%s]\n", disk->disk_name);
 
+#if !defined(HAVE_BDEV_QUEUE_LIMITS)
 	blk_queue_physical_block_size(disk->queue,
 					tracker->diff_area->physical_blksz);
 	blk_queue_logical_block_size(disk->queue,
 					tracker->diff_area->logical_blksz);
+#endif
 #ifdef HAVE_ADD_DISK_RESULT
 	ret = add_disk(disk);
 	if (ret) {
