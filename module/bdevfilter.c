@@ -507,6 +507,7 @@ static struct ftrace_ops ops_submit_bio_noacct = {
 };
 
 #ifdef HAVE_BDEV_MARK_DEAD
+static unsigned long addr_bdev_mark_dead;
 
 /*
  * ftrace for bdev_mark_dead()
@@ -515,7 +516,11 @@ static notrace __attribute__((optimize("no-optimize-sibling-calls")))
 void bdev_mark_dead_handler(struct block_device *bdev, bool surprise)
 {
 	__blkfilter_detach(bdev->bd_dev, NULL, 0);
-	bdev_mark_dead(bdev, surprise);
+	/*
+	 * bdev_mark_dead(bdev, surprise);
+	 * On some systems, this function may not be exported.
+	 */
+	((void (*)(struct block_device *bdev, bool surprise))addr_bdev_mark_dead)(bdev, surprise);
 }
 
 static notrace void ftrace_handler_bdev_mark_dead(
@@ -755,6 +760,13 @@ static int prepare_fn(void )
 	if (ret)
 		return ret;
 	addr_ftrace_free_filter = kernel_base + (unsigned long)addr;
+#endif
+
+#ifdef HAVE_BDEV_MARK_DEAD
+	ret = get_symbol("bdev_mark_dead", &addr);
+	if (ret)
+		return ret;
+	addr_bdev_mark_dead = kernel_base + (unsigned long)addr;
 #endif
 	return 0;
 }
