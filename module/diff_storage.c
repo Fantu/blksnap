@@ -41,7 +41,6 @@ static inline void diff_storage_event_low(struct diff_storage *diff_storage, sec
 		.requested_nr_sect = req_sect,
 	};
 
-	diff_storage->requested += data.requested_nr_sect;
 	pr_debug("Diff storage low free space. Portion: %llu sectors, requested: %llu\n",
 		data.requested_nr_sect, diff_storage->requested);
 	event_gen(&diff_storage->event_queue,
@@ -407,7 +406,7 @@ int diff_storage_alloc(struct diff_storage *diff_storage, sector_t count,
 	*pfile = diff_storage->file;
 	*psector = diff_storage->filled;
 #ifdef BLKSNAP_MODIFICATION
-	if (!*pbdev && ! *pfile) {
+	if (!*pbdev && !*pfile) {
 		ret = diff_storage_get_range(diff_storage, count, pbdev, psector);
 		if (ret)
 			goto out_spin_unlock;
