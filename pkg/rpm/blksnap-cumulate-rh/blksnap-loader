@@ -298,10 +298,6 @@ def TryLoadBdevFilter(modulePath):
 		UnloadModule();
 
 	cmd = "insmod " + modulePath
-	for param in params:
-		cmd += " "
-		cmd += param
-
 	ExecuteCommand(cmd)
 
 def TryLoadBlksnap(modulePath, params):
