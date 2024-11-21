@@ -83,6 +83,10 @@ struct diff_storage {
 	spinlock_t ranges_lock;
 	struct list_head free_ranges_list;
 #endif
+#ifdef BLKSNAP_STANDALONE
+	bool use_fiemap;
+	struct xarray exclude_map;
+#endif
 };
 
 struct diff_storage *diff_storage_new(void);
@@ -116,6 +120,31 @@ int diff_storage_add_range(struct diff_storage *diff_storage,
 			      struct blksnap_sectors range);
 int diff_storage_get_range(struct diff_storage *diff_storage, sector_t count,
 			   struct block_device **pbdev, sector_t *poffset);
+#endif
+
+#ifdef BLKSNAP_STANDALONE
+/*
+ * Return 'true' if the first and last sectors belong to the map.
+ */
+static inline bool diff_storage_excude(struct diff_storage *diff_storage,
+				       dev_t dev_id,
+				       sector_t sector, sector_t count)
+{
+	void *entry;
+
+	if (!diff_storage->use_fiemap)
+		return false;
+
+	if (dev_id != diff_storage->dev_id)
+		return false;
+
+	entry = xa_load(&diff_storage->exclude_map, sector);
+	if (!xa_is_value(entry))
+		return false;
+
+	entry = xa_load(&diff_storage->exclude_map, sector + count - 1);
+	return xa_is_value(entry);
+}
 #endif
 
 #endif /* __BLKSNAP_DIFF_STORAGE_H */
