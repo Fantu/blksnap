@@ -192,8 +192,4 @@ bool diff_area_submit_chunk(struct diff_area *diff_area, struct bio *bio);
 void diff_area_rw_chunk(struct kref *kref);
 bool diff_area_cow_process_bio(struct diff_area *diff_area, struct bio *bio);
 
-#ifdef BLKSNAP_STANDALONE
-bool diff_area_exclude(struct diff_area *diff_area, dev_t dev_id,
-		       sector_t sector, sector_t count);
-#endif
 #endif /* __BLKSNAP_DIFF_AREA_H */

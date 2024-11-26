@@ -186,26 +186,9 @@ int snapshot_add_device(const uuid_t *id, struct tracker *tracker)
 
 	down_write(&snapshot->rw_lock);
 	if (tracker->dev_id == snapshot->diff_storage->dev_id) {
-		if (!snapshot->diff_storage->file) {
-			pr_err("The block device %d:%d is already being used as difference storage\n",
-				MAJOR(tracker->dev_id), MINOR(tracker->dev_id));
-			goto out_up;
-		}
-#ifdef BLKSNAP_STANDALONE
-		if (!file_inode(snapshot->diff_storage->file)->i_op->fiemap) {
-			pr_err("File on the block device %d:%d used as a difference store\n",
-				MAJOR(tracker->dev_id), MINOR(tracker->dev_id));
-			pr_err("The file system does not support the 'fiemap' operation\n");
-			goto out_up;
-		}
-		pr_info("File on the tracked block device %d:%d used as a difference store\n",
-			MAJOR(tracker->dev_id), MINOR(tracker->dev_id));
-		snapshot->diff_storage->use_fiemap = true;
-#else
-		pr_err("File on the block device %d:%d used as a difference store\n",
+		pr_err("The block device %d:%d is already being used as difference storage\n",
 			MAJOR(tracker->dev_id), MINOR(tracker->dev_id));
 		goto out_up;
-#endif
 	}
 	if (!list_empty(&snapshot->trackers)) {
 		struct tracker *tr;

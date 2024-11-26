@@ -65,7 +65,6 @@ static bool tracker_submit_bio(struct bio *bio)
 	if (bio_flagged(bio, BIO_REMAPPED))
 		sector -= bio->bi_bdev->bd_start_sect;
 #endif
-
 	if (cbt_map_set(tracker->cbt_map, sector, count))
 		return false;
 
@@ -92,10 +91,6 @@ static bool tracker_submit_bio(struct bio *bio)
 		diff_area_set_corrupted(tracker->diff_area, -EPERM);
 		return false;
 	}
-#endif
-#if defined(BLKSNAP_STANDALONE)
-	if (diff_area_exclude(tracker->diff_area, bio->bi_bdev->bd_dev, sector, count))
-		return false;
 #endif
 	return diff_area_cow(tracker->diff_area, bio);
 }

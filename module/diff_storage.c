@@ -12,7 +12,6 @@
 #ifdef BLKSNAP_STANDALONE
 #include "veeamblksnap.h"
 #include "compat.h"
-#include <linux/fiemap.h>
 #else
 #include <uapi/linux/blksnap.h>
 #endif
@@ -49,98 +48,13 @@ static inline void diff_storage_event_low(struct diff_storage *diff_storage, sec
 		  &data,
 		  sizeof(data));
 }
-#endif
 
-#ifdef BLKSNAP_STANDALONE
-static inline int diff_storage_fiemap(struct inode *inode, struct fiemap *fiemap)
-{
-	int ret;
-	struct fiemap_extent_info fieinfo = {
-		.fi_flags = fiemap->fm_flags,
-		.fi_extents_mapped = 0,
-		.fi_extents_max = fiemap->fm_extent_count,
-		.fi_extents_start = fiemap->fm_extents,
-	};
-
-	ret = inode->i_op->fiemap(inode, &fieinfo,
-		fiemap->fm_start,
-		fiemap->fm_length);
-
-	fiemap->fm_flags = fieinfo.fi_flags;
-	fiemap->fm_mapped_extents = fieinfo.fi_extents_mapped;
-
-	return ret;
-}
-
-static int diff_storage_exclude_file(struct diff_storage *diff_storage,
-				     struct file *filp, loff_t length)
-{
-	int ret = 0;
-	const unsigned int fail_flags = ~(FIEMAP_EXTENT_LAST |
-					FIEMAP_EXTENT_UNWRITTEN |
-					FIEMAP_EXTENT_MERGED);
-	/* 7*8*72 = 4032 <= FIEMAP_MAX_EXTENTS */
-	const unsigned int extent_count = 72;
-	struct inode *inode = file_inode(filp);
-	struct fiemap *fiemap;
-	void *buf;
-	unsigned int inx;
-	loff_t offset = 0;
-
-	buf = kmalloc(sizeof(struct fiemap) +
-		      extent_count * sizeof(struct fiemap_extent), GFP_KERNEL);
-	if (!buf)
-		return -ENOMEM;
-
-	fiemap = buf;
-	fiemap->fm_extent_count = extent_count;
-
-	do {
-		fiemap->fm_start = offset;
-		fiemap->fm_length = length - offset;
-		fiemap->fm_flags = 0;
-
-		ret = diff_storage_fiemap(inode, fiemap);
-		if (ret) {
-			pr_err("Failed to call 'fiemap'\n");
-			break;
-		}
-		if (fiemap->fm_flags & fail_flags) {
-			pr_err("Incompatible extent flags: %d\n",
-				fiemap->fm_flags & fail_flags);
-			ret = EINVAL;
-			break;
-		}
-
-		for (inx=0; inx < fiemap->fm_mapped_extents; ++inx) {
-			void *xa_ret;
-			struct fiemap_extent *fe = fiemap->fm_extents + inx;
-			unsigned long ofs = fe->fe_physical >> SECTOR_SHIFT;
-			unsigned long sz = fe->fe_length >> SECTOR_SHIFT;
-
-			xa_ret = xa_store_range(&diff_storage->exclude_map,
-						ofs, ofs + sz - 1,
-						xa_mk_value(ofs),
-						GFP_KERNEL);
-			if (xa_is_err(xa_ret)) {
-				pr_err("Cannot add range to exclude map\n");
-				ret = xa_err(xa_ret);
-				break;
-			}
-			offset = fe->fe_logical + fe->fe_length;
-		}
-	} while (!(fiemap->fm_flags && FIEMAP_EXTENT_LAST));
-	kfree(buf);
-
-	return ret;
-}
 #endif
 
 static void diff_storage_reallocate_work(struct work_struct *work)
 {
 	int ret;
 	sector_t req_sect;
-	loff_t filesize;
 	struct diff_storage *diff_storage = container_of(
 		work, struct diff_storage, reallocate_work);
 	bool complete = false;
@@ -148,10 +62,10 @@ static void diff_storage_reallocate_work(struct work_struct *work)
 	do {
 		spin_lock(&diff_storage->lock);
 		req_sect = diff_storage->requested;
-		filesize = (loff_t)(req_sect << SECTOR_SHIFT);
 		spin_unlock(&diff_storage->lock);
 
-		ret = vfs_fallocate(diff_storage->file, 0, 0, filesize);
+		ret = vfs_fallocate(diff_storage->file, 0, 0,
+				    (loff_t)(req_sect << SECTOR_SHIFT));
 		if (ret) {
 			pr_err("Failed to fallocate difference storage file\n");
 			break;
@@ -168,17 +82,6 @@ static void diff_storage_reallocate_work(struct work_struct *work)
 
 		pr_debug("Diff storage reallocate. Capacity: %llu sectors\n",
 			 req_sect);
-
-#ifdef BLKSNAP_STANDALONE
-		if (diff_storage->use_fiemap) {
-			ret = diff_storage_exclude_file(diff_storage,
-						diff_storage->file, filesize);
-			if (ret) {
-				pr_err("Failed to exclude difference storage file\n");
-				break;
-			}
-		}
-#endif
 	} while (!complete);
 }
 
@@ -261,10 +164,6 @@ struct diff_storage *diff_storage_new(void)
 	spin_lock_init(&diff_storage->ranges_lock);
 	INIT_LIST_HEAD(&diff_storage->free_ranges_list);
 #endif
-#ifdef BLKSNAP_STANDALONE
-	xa_init(&diff_storage->exclude_map);
-	diff_storage->use_fiemap = false;
-#endif
 	return diff_storage;
 }
 
@@ -304,9 +203,6 @@ void diff_storage_free(struct kref *kref)
 	xa_destroy(&diff_storage->diff_storage_bdev_map);
 #endif /* BLKSNAP_MODIFICATION */
 
-#ifdef BLKSNAP_STANDALONE
-	xa_destroy(&diff_storage->exclude_map);
-#endif
 	pr_debug("Difference storage %p has been released\n", diff_storage);
 	ms_kfree(diff_storage);
 }

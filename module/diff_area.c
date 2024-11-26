@@ -820,12 +820,3 @@ void diff_area_set_corrupted(struct diff_area *diff_area, int err_code)
 	       MAJOR(diff_area->orig_bdev->bd_dev),
 	       MINOR(diff_area->orig_bdev->bd_dev), abs(err_code));
 }
-
-#ifdef BLKSNAP_STANDALONE
-bool diff_area_exclude(struct diff_area *diff_area, dev_t dev_id,
-		       sector_t sector, sector_t count)
-{
-	return diff_storage_excude(diff_area->diff_storage, dev_id,
-				   sector, count);
-}
-#endif
