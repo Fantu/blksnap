@@ -94,7 +94,7 @@ static bool tracker_submit_bio(struct bio *bio)
 	}
 #endif
 #if defined(BLKSNAP_STANDALONE)
-	if (diff_area_exclude(tracker->diff_area, tracker->dev_id, sector, count))
+	if (diff_area_exclude(tracker->diff_area, bio->bi_bdev->bd_dev, sector, count))
 		return false;
 #endif
 	return diff_area_cow(tracker->diff_area, bio);
