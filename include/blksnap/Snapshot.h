@@ -40,7 +40,7 @@ namespace blksnap
         int errorCode;
     };
 
-    struct SBlksnapEventLowFreeSpace
+    struct SBlksnapEventNoSpace
     {
         unsigned long long requestedSectors;
     };
@@ -52,7 +52,7 @@ namespace blksnap
         union
         {
             struct SBlksnapEventCorrupted corrupted;
-            struct SBlksnapEventLowFreeSpace lowFreeSpace;
+            struct SBlksnapEventNoSpace noSpace;
         };
     };
 

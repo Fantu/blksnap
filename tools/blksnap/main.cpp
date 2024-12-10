@@ -824,9 +824,18 @@ public:
                                 "The snapshot was corrupted for device [" +
                                 std::to_string(data->dev_id_mj) + ":" + std::to_string(data->dev_id_mn) + "]");
                         }
+                    case blksnap_event_code_no_space:
+                        {
+                            struct blksnap_event_no_space* data = (struct blksnap_event_no_space*)param.data;
+
+                            std::cerr << "The the difference storage already grow up to "
+                                << (data->requested_nr_sect / 2048) << " MiB. Limit has been reached." << std::endl;
+                        }
+                        break;
+#ifdef BLKSNAP_MODIFICATION
                     case blksnap_event_code_low_free_space:
                         {
-                            struct blksnap_event_low_free_space* data = (struct blksnap_event_low_free_space*)param.data;
+                            struct blksnap_event_no_space* data = (struct blksnap_event_no_space*)param.data;
 
                             std::string filepath = diffStorage+"/diff_storage#"+std::to_string(0);
                             off_t filesize = data->requested_nr_sect * 512;
@@ -839,6 +848,7 @@ public:
                             AppendStorage(blksnapFd.get(), id, bdevPath, ranges);
                         }
                         break;
+#endif
                     default:
                         std::cerr << param.time_label << " - unsupported event #" << param.code << "." << std::endl;
                     }
@@ -1008,6 +1018,9 @@ public:
             case blksnap_event_code_corrupted:
                 std::cout << "event=corrupted" << std::endl;
                 break;
+            case blksnap_event_code_no_space:
+                std::cout << "event=no_space" << std::endl;
+                break;
 #ifdef BLKSNAP_MODIFICATION
             case blksnap_event_code_low_free_space:
                 std::cout << "event=low_free_space" << std::endl;
@@ -1085,8 +1098,13 @@ private:
         std::cout << time_label << " - The snapshot was corrupted for device [" << data->dev_id_mj << ":"
                   << data->dev_id_mn << "] with error \"" << std::strerror(data->err_code) << "\"." << std::endl;
     };
+    void ProcessEventNoSpace(unsigned int time_label, struct blksnap_event_no_space* data)
+    {
+        std::cout << time_label << " - The the difference storage already grow up to "
+                  << (data->requested_nr_sect / 2048) << " MiB. Limit has been reached." << std::endl;
+    }
 #ifdef BLKSNAP_MODIFICATION
-    void ProcessEventLowFreeSpace(unsigned int time_label, struct blksnap_event_low_free_space* data)
+    void ProcessEventLowFreeSpace(unsigned int time_label, struct blksnap_event_no_space* data)
     {
         std::cout << time_label << " - The snapshot requests additional ["<< data->requested_nr_sect << "] sectors for difference storage space." << std::endl;
 
@@ -1162,10 +1180,14 @@ public:
                             (struct blksnap_event_corrupted*)param.data);
                     terminate = true;
                     break;
+                case blksnap_event_code_no_space:
+                    ProcessEventNoSpace(param.time_label,
+                            (struct blksnap_event_no_space*)param.data);
+                    break;
 #ifdef BLKSNAP_MODIFICATION
                 case blksnap_event_code_low_free_space:
                     ProcessEventLowFreeSpace(param.time_label,
-                            (struct blksnap_event_low_free_space*)param.data);
+                            (struct blksnap_event_no_space*)param.data);
                     break;
 #endif
                 default:

@@ -128,12 +128,19 @@ bool CSnapshot::WaitEvent(unsigned int timeoutMs, SBlksnapEvent& ev)
         ev.corrupted.errorCode = corrupted->err_code;
         break;
     }
+    case blksnap_event_code_no_space:
+    {
+        struct blksnap_event_no_space* data = (struct blksnap_event_no_space*)(param.data);
+
+        ev.noSpace.requestedSectors = data->requested_nr_sect;
+        break;
+    }
 #ifdef BLKSNAP_MODIFICATION
     case blksnap_event_code_low_free_space:
     {
-        struct blksnap_event_low_free_space* lowFreeSpace = (struct blksnap_event_low_free_space*)(param.data);
+        struct blksnap_event_no_space* noSpace = (struct blksnap_event_no_space*)(param.data);
 
-        ev.lowFreeSpace.requestedSectors = lowFreeSpace->requested_nr_sect;
+        ev.noSpace.requestedSectors = noSpace->requested_nr_sect;
         break;
     }
 #endif
