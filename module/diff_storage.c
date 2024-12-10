@@ -37,7 +37,7 @@ struct diff_storage_range {
 
 static inline void diff_storage_event_low(struct diff_storage *diff_storage, sector_t req_sect)
 {
-	struct blksnap_event_low_free_space data = {
+	struct blksnap_event_no_space data = {
 		.requested_nr_sect = req_sect,
 	};
 
@@ -45,11 +45,22 @@ static inline void diff_storage_event_low(struct diff_storage *diff_storage, sec
 		data.requested_nr_sect, diff_storage->requested);
 	event_gen(&diff_storage->event_queue,
 		  blksnap_event_code_low_free_space,
-		  &data,
-		  sizeof(data));
+		  &data, sizeof(data));
 }
-
 #endif
+
+static inline void diff_storage_event_nospace(struct diff_storage *diff_storage)
+{
+	struct blksnap_event_no_space data = {
+		.requested_nr_sect = diff_storage->requested,
+	};
+
+	pr_info("The limit size of the difference storage has been reached\n");
+
+	event_gen(&diff_storage->event_queue,
+		  blksnap_event_code_no_space,
+		  &data, sizeof(data));
+}
 
 static void diff_storage_reallocate_work(struct work_struct *work)
 {
@@ -126,7 +137,7 @@ static inline void check_halffull(struct diff_storage *diff_storage,
 			if (req_sect)
 				diff_storage_event_low(diff_storage, req_sect);
 			else
-				pr_info("The limit size of the difference storage has been reached\n");
+				diff_storage_event_nospace(diff_storage);
 			return;
 		}
 #endif
@@ -135,7 +146,7 @@ static inline void check_halffull(struct diff_storage *diff_storage,
 			return;
 		}
 		if (!diff_storage_calculate_requested(diff_storage)) {
-			pr_info("The limit size of the difference storage has been reached\n");
+			diff_storage_event_nospace(diff_storage);
 			return;
 		}
 
