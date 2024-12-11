@@ -54,6 +54,30 @@ void memstat_done(void)
 	xa_destroy(&memstat_class_map);
 }
 
+static void memstat_error(void)
+{
+	unsigned long inx = 0;
+	struct memstat_class *class;
+
+	pr_err("Number of objects used %lld total %lld bytes.\n",
+		atomic64_read(&memstat_kcnt),
+		atomic64_read(&memstat_ksize));
+	pr_err("Number of pages used %lld.\n",
+		atomic64_read(&memstat_pgcnt));
+
+	if (!atomic_read(&memstat_state))
+		return;
+
+	xa_for_each(&memstat_class_map, inx, class) {
+		if (likely(class) && atomic64_read(&class->count)) {
+			pr_err("%s:%d count: %lld total: %lld\n",
+				class->file, class->line,
+				atomic64_read(&class->count),
+				atomic64_read(&class->total_size));
+		}
+	}
+}
+
 void memstat_print(void)
 {
 	unsigned long inx = 0;
@@ -93,7 +117,7 @@ void *memstat_kmalloc(const char *file, const int line, size_t size, gfp_t flags
 
 	ptr = kmalloc(size + sizeof(struct memstat_obj), flags);
 	if (unlikely(!ptr)) {
-		memstat_print();
+		memstat_error();
 		return NULL;
 	}
 
@@ -176,7 +200,7 @@ struct page *memstat_alloc_page(gfp_t flags)
 	struct page *pg = alloc_page(flags);
 
 	if (unlikely(!pg)) {
-		memstat_print();
+		memstat_error();
 		return NULL;
 	}
 
