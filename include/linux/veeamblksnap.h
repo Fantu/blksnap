@@ -6,7 +6,7 @@
 #include <linux/types.h>
 
 #define BLKSNAP_CTL "veeamblksnap"
-#define BLKSNAP_IMAGE_NAME "veeamblksnapimg"
+#define BLKSNAP_IMAGE_NAME "vbsnap"
 #define BLKSNAP 'V'
 
 /**

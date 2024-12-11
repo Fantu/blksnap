@@ -263,7 +263,7 @@ int snapimage_create(struct tracker *tracker)
 
 	disk->private_data = tracker;
 	set_capacity(disk, tracker->cbt_map->device_capacity);
-	ret = snprintf(disk->disk_name, DISK_NAME_LEN, "%s_%d:%d",
+	ret = snprintf(disk->disk_name, DISK_NAME_LEN, "%s-%d-%d",
 		       BLKSNAP_IMAGE_NAME, MAJOR(dev_id), MINOR(dev_id));
 	if (ret < 0) {
 		pr_err("Unable to set disk name for snapshot image device: invalid device id [%d:%d]\n",
