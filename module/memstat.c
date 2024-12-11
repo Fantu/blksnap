@@ -26,6 +26,7 @@ struct memstat_obj {
 
 static atomic64_t memstat_kcnt;
 static atomic64_t memstat_ksize;
+static atomic64_t memstat_pgcnt;
 static atomic_t memstat_state;
 static DEFINE_XARRAY(memstat_class_map);
 
@@ -61,6 +62,8 @@ void memstat_print(void)
 	pr_debug("Number of objects used %lld total %lld bytes.\n",
 		atomic64_read(&memstat_kcnt),
 		atomic64_read(&memstat_ksize));
+	pr_debug("Number of pages used %lld.\n",
+		atomic64_read(&memstat_pgcnt));
 
 	if (!atomic_read(&memstat_state))
 		return;
@@ -89,8 +92,10 @@ void *memstat_kmalloc(const char *file, const int line, size_t size, gfp_t flags
 	struct memstat_obj *obj;
 
 	ptr = kmalloc(size + sizeof(struct memstat_obj), flags);
-	if (unlikely(!ptr))
+	if (unlikely(!ptr)) {
+		memstat_print();
 		return NULL;
+	}
 
 	obj = ptr;
 	ptr += sizeof(struct memstat_obj);
@@ -164,6 +169,25 @@ void memstat_kfree(void *ptr)
 	atomic64_dec(&memstat_kcnt);
 	atomic64_sub(obj->size, &memstat_ksize);
 	return kfree(ptr);
+}
+
+struct page *memstat_alloc_page(gfp_t flags)
+{
+	struct page *pg = alloc_page(flags);
+
+	if (unlikely(!pg)) {
+		memstat_print();
+		return NULL;
+	}
+
+	atomic64_inc(&memstat_pgcnt);
+	return pg;
+}
+
+void memstat_free_page(struct page *pg)
+{
+	atomic64_dec(&memstat_pgcnt);
+	__free_page(pg);
 }
 
 #endif /*BLKSNAP_MEMSTAT*/

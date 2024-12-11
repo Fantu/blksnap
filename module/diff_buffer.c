@@ -23,7 +23,7 @@ static void diff_buffer_free(struct diff_buffer *diff_buffer)
 		return;
 
 	for (inx = 0; inx < diff_buffer->nr_pages; inx++)
-		__free_page(diff_buffer->bvec[inx].bv_page);
+		ms_free_page(diff_buffer->bvec[inx].bv_page);
 
 	memset(diff_buffer, 0, sizeof(struct diff_buffer)); //DEBUG
 	ms_kfree(diff_buffer);
@@ -47,7 +47,7 @@ static struct diff_buffer *diff_buffer_new(size_t nr_pages, size_t size)
 	diff_buffer->nr_pages = 0;
 
 	for (inx = 0; inx < nr_pages; inx++) {
-		struct page *page = alloc_page(GFP_KERNEL);
+		struct page *page = ms_alloc_page(GFP_KERNEL);
 
 		if (!page)
 			goto fail;

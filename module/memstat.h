@@ -15,9 +15,15 @@ void memstat_enable(int state);
 	memstat_kmalloc(__FILE__, __LINE__, size, gfp | __GFP_ZERO)
 #define ms_kfree(ptr) \
 	memstat_kfree(ptr)
+#define ms_alloc_page(gfp) \
+	memstat_alloc_page(gfp)
+#define ms_free_page(pg) \
+	memstat_free_page(pg)
 
 void *memstat_kmalloc(const char *key_file, const int key_line, size_t size, gfp_t flags);
 void memstat_kfree(void *ptr);
+struct page *memstat_alloc_page(gfp_t flags);
+void memstat_free_page(struct page *pg);
 
 #else /*BLKSNAP_MEMSTAT*/
 
@@ -27,6 +33,10 @@ void memstat_kfree(void *ptr);
 	kzalloc(size, gfp)
 #define ms_kfree(ptr) \
 	kfree(ptr)
+#define ms_alloc_page(gfp) \
+	alloc_page(gfp)
+#define ms_free_page(pg) \
+	__free_page(pg)
 
 #endif /*BLKSNAP_MEMSTAT*/
 
