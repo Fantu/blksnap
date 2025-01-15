@@ -48,7 +48,7 @@ for kver in %{kversion}; do
 
 	export INSTALL_MOD_PATH=%{buildroot}
 	export INSTALL_MOD_DIR=extra
-	export INSTALL_MOD_DIR=--strip-debug
+	export INSTALL_MOD_STRIP=--strip-debug
 
 	%{__make} -C "${KSRC}" modules_install M=$PWD/module
 	%{__rm} -f %{buildroot}/lib/modules/${kver}/modules.*
