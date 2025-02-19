@@ -45,3 +45,15 @@ size=512m
 rw=randwrite
 bs=4k
 size=128m
+
+[read_deep_depth]
+iodepth=2048
+rw=read
+bs=1m
+size=2g
+
+[write_deep_depth]
+iodepth=2048
+rw=write
+bs=1m
+size=2g
