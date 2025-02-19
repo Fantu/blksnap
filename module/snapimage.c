@@ -273,6 +273,7 @@ int snapimage_create(struct tracker *tracker)
 	}
 	pr_debug("Snapshot image disk name [%s]\n", disk->disk_name);
 
+	blk_set_queue_depth(disk->queue, 64);
 #if !defined(HAVE_BDEV_QUEUE_LIMITS)
 	blk_queue_physical_block_size(disk->queue,
 					tracker->diff_area->physical_blksz);
