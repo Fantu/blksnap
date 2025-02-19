@@ -66,13 +66,16 @@ struct diff_buffer *diff_buffer_take(struct diff_area *diff_area)
 	sector_t chunk_sectors;
 	size_t page_count;
 
+	if (down_killable(&diff_area->free_diff_buffer_sem)) {
+		pr_err("Cannot get buffer: waiting has been interrupted\n");
+		return ERR_PTR(-EINTR);
+	}
+
 	spin_lock(&diff_area->free_diff_buffers_lock);
 	diff_buffer = list_first_entry_or_null(&diff_area->free_diff_buffers,
 					       struct diff_buffer, link);
-	if (diff_buffer) {
+	if (diff_buffer)
 		list_del(&diff_buffer->link);
-		atomic_dec(&diff_area->free_diff_buffers_count);
-	}
 	spin_unlock(&diff_area->free_diff_buffers_lock);
 
 	/* Return free buffer if it was found in a pool */
@@ -84,23 +87,21 @@ struct diff_buffer *diff_buffer_take(struct diff_area *diff_area)
 	page_count = round_up(chunk_sectors, PAGE_SECTORS) / PAGE_SECTORS;
 	diff_buffer = diff_buffer_new(page_count,
 				      chunk_sectors << SECTOR_SHIFT);
-	if (unlikely(!diff_buffer))
+	if (unlikely(!diff_buffer)) {
+		up(&diff_area->free_diff_buffer_sem);
 		return ERR_PTR(-ENOMEM);
+	}
 	return diff_buffer;
 }
 
 void diff_buffer_release(struct diff_area *diff_area,
 			 struct diff_buffer *diff_buffer)
 {
-	if (atomic_read(&diff_area->free_diff_buffers_count) >
-	    get_free_diff_buffer_pool_size()) {
-		diff_buffer_free(diff_buffer);
-		return;
-	}
 	spin_lock(&diff_area->free_diff_buffers_lock);
 	list_add_tail(&diff_buffer->link, &diff_area->free_diff_buffers);
-	atomic_inc(&diff_area->free_diff_buffers_count);
 	spin_unlock(&diff_area->free_diff_buffers_lock);
+
+	up(&diff_area->free_diff_buffer_sem);
 }
 
 void diff_buffer_cleanup(struct diff_area *diff_area)
@@ -112,10 +113,8 @@ void diff_buffer_cleanup(struct diff_area *diff_area)
 		diff_buffer =
 			list_first_entry_or_null(&diff_area->free_diff_buffers,
 						 struct diff_buffer, link);
-		if (diff_buffer) {
+		if (diff_buffer)
 			list_del(&diff_buffer->link);
-			atomic_dec(&diff_area->free_diff_buffers_count);
-		}
 		spin_unlock(&diff_area->free_diff_buffers_lock);
 
 		if (diff_buffer)
