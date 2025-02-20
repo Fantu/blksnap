@@ -430,7 +430,7 @@ struct diff_area *diff_area_new(struct tracker *tracker,
 
 	spin_lock_init(&diff_area->free_diff_buffers_lock);
 	INIT_LIST_HEAD(&diff_area->free_diff_buffers);
-	sema_init(&diff_area->free_diff_buffer_sem, get_free_diff_buffer_pool_size());
+	atomic_set(&diff_area->free_diff_buffers_count, 0);
 
 	spin_lock_init(&diff_area->image_io_queue_lock);
 	INIT_LIST_HEAD(&diff_area->image_io_queue);
