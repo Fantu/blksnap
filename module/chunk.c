@@ -4,7 +4,6 @@
 
 #include <linux/blkdev.h>
 #include <linux/slab.h>
-#include <linux/refcount.h> //DEBUG
 #ifdef BLKSNAP_STANDALONE
 #include "compat.h"
 #include "bdevfilter-internal.h"
@@ -30,7 +29,6 @@ struct chunk_bio {
 	struct list_head chunks;
 	struct bio *orig_bio;
 	struct bvec_iter orig_iter;
-	refcount_t orig_bio_ref; //DEBUG
 	struct bio bio;
 };
 
@@ -115,8 +113,6 @@ void chunk_copy_bio(struct chunk *chunk, struct bio *bio,
 		unsigned int inx = chunk_ofs >> PAGE_SHIFT;
 		struct page *page = chunk->diff_buffer->bvec[inx].bv_page;
 		unsigned int len;
-
-		BUG_ON(inx >= chunk->diff_buffer->nr_pages); //DEBUG
 
 		len = min3(bvec.bv_len,
 			   chunk_left,
@@ -446,9 +442,6 @@ static void notify_load_and_schedule_io(struct work_struct *work)
 			continue;
 		}
 
-		WARN(!bio_flagged(cbio->orig_bio, BIO_CHAIN), "DEBUG!!!");
-		refcount_dec(&cbio->orig_bio_ref); //DEBUG
-
 		chunk_copy_bio(chunk, cbio->orig_bio, &cbio->orig_iter);
 		chunk_store(chunk);
 		bio_endio(cbio->orig_bio);
@@ -604,7 +597,6 @@ void chunk_store_tobdev(struct chunk *chunk)
 	}
 
 	cbio = container_of(bio, struct chunk_bio, bio);
-	refcount_set(&cbio->orig_bio_ref, 1); //DEBUG
 	INIT_WORK(&cbio->work, chunk_notify_store_tobdev);
 	INIT_LIST_HEAD(&cbio->chunks);
 	list_add_tail(&chunk->link, &cbio->chunks);
@@ -778,7 +770,6 @@ bool chunk_load_and_schedule_io(struct chunk *chunk, struct bio *orig_bio)
 	}
 
 	cbio = container_of(bio, struct chunk_bio, bio);
-	refcount_set(&cbio->orig_bio_ref, 1); //DEBUG
 	INIT_LIST_HEAD(&cbio->chunks);
 	list_add_tail(&chunk->link, &cbio->chunks);
 	INIT_WORK(&cbio->work, notify_load_and_schedule_io);
@@ -788,8 +779,6 @@ bool chunk_load_and_schedule_io(struct chunk *chunk, struct bio *orig_bio)
 			 chunk_limit(chunk, orig_bio));
 	bio_inc_remaining(orig_bio);
 
-
-	refcount_inc(&cbio->orig_bio_ref); //DEBUG
 #ifdef BLKSNAP_HISTOGRAM
 	log_histogram_add(&chunk->diff_area->image_hg, bio->bi_iter.bi_size);
 #endif
