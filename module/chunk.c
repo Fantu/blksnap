@@ -80,7 +80,6 @@ static inline void chunk_io_failed(struct chunk *chunk)
 static void chunk_store(struct chunk *chunk)
 {
 	struct diff_area *diff_area = diff_area_get(chunk->diff_area);
-	bool need_work = false;
 
 	WARN_ON_ONCE(chunk->state != CHUNK_ST_NEW &&
 		     chunk->state != CHUNK_ST_STORED);
@@ -88,19 +87,11 @@ static void chunk_store(struct chunk *chunk)
 
 	spin_lock(&diff_area->store_queue_lock);
 	list_add_tail(&chunk->link, &diff_area->store_queue);
-
-	need_work = (atomic_inc_return(&diff_area->store_queue_count) >
-		     get_chunk_maximum_in_queue());
 	spin_unlock(&diff_area->store_queue_lock);
 
 	chunk_up(chunk);
 
-	if (need_work) {
-		WARN_ONCE(atomic_read(&diff_area->store_queue_count) > 10000,
-			"Store queue already have up to 10000 items");
-
-		diff_area_store_queue(diff_area);
-	}
+	diff_area_store_queue(diff_area);
 	diff_area_put(diff_area);
 }
 
@@ -452,9 +443,8 @@ static void notify_load_and_schedule_io(struct work_struct *work)
 		refcount_dec(&cbio->orig_bio_ref); //DEBUG
 
 		chunk_copy_bio(chunk, cbio->orig_bio, &cbio->orig_iter);
-		bio_endio(cbio->orig_bio);
-
 		chunk_store(chunk);
+		bio_endio(cbio->orig_bio);
 	}
 
 	bio_put(&cbio->bio);

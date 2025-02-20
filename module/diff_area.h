@@ -50,8 +50,6 @@ struct tracker;
  *	queue.
  * @store_queue:
  *	The queue of chunks waiting to be stored to the difference storage.
- * @store_queue_count:
- *	The number of chunks in the store queue.
  * @free_diff_buffers_lock:
  *	The spinlock guarantees consistency of the linked lists of free
  *	difference buffers.
@@ -132,7 +130,6 @@ struct diff_area {
 #endif
 	spinlock_t store_queue_lock;
 	struct list_head store_queue;
-	atomic_t store_queue_count;
 
 	spinlock_t free_diff_buffers_lock;
 	struct list_head free_diff_buffers;
