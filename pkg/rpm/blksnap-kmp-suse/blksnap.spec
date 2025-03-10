@@ -12,7 +12,7 @@ Source10: %{name}-%{version}-preamble
 Source20: kernel-module-subpackage
 BuildRoot: %{_tmppath}/%{name}-%{version}-build
 URL: http://github.com/veeam/%{name}
-Requires: modutils suse-module-tools
+Requires: modutils mokutil suse-module-tools
 
 %kernel_module_package -n %{name} -p %{_sourcedir}/%{name}-%{version}-preamble -t %{_sourcedir}/kernel-module-subpackage
 

@@ -24,7 +24,7 @@ of the same variant of the Linux kernel and not on any one specific build.
 Summary: %{name} kernel module
 Group: System Environment/Kernel
 Provides: %{name} = %{version}
-Requires: kmod python3
+Requires: kmod mokutil python3
 Conflicts: veeamsnap
 
 %description -n kmod-%{name}
@@ -68,6 +68,22 @@ done
 
 %clean
 %{__rm} -rf %{buildroot}
+
+%pre -n kmod-%{name}
+if mokutil --sb-state | grep -qw "SecureBoot enabled"
+then
+	echo "[TBD]Secure Boot is enabled."
+	if mokutil --list-enrolled | grep -qw "CN=Veeam Software Group GmbH"
+	then
+		echo "[TBD]The Veeam Software certificate was found."
+	else
+		echo "[TBD]The Veeam Software certificate should be installed."
+		echo "[TBD]Please install ueficert package and complete MOK enrollment to continue."
+		exit 1
+	fi
+else
+	echo "[TBD]Secure Boot is disabled."
+fi
 
 %preun -n kmod-%{name}
 /usr/sbin/%{name}-loader --unload
