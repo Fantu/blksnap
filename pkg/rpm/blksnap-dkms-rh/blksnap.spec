@@ -21,6 +21,17 @@ functionality used by Veeam Agent for Linux - simple and FREE backup agent
 designed to ensure the Availability of your Linux server instances, whether
 they reside in the public cloud or on premises.
 
+%pre
+if rpm -qa | grep -qw "kernel-devel-$(uname -r)"
+then
+  echo "[TBD]The installed 'kernel-devel-$(uname -r)' package for the current kernel was found."
+else
+  echo "[TBD]The 'kernel-devel-$(uname -r)' package for the current kernel was not found."
+  echo "[TBD]Install the 'kernel-devel-$(uname -r)' package into the system."
+  echo "[TBD]Or install latest 'kernel' and 'kernel-devel' packages and reboot the system."
+  exit 1
+fi
+
 %post
 POSTINST="/usr/lib/dkms/common.postinst"
 if [ -f $POSTINST ]
