@@ -4,6 +4,5 @@ then
 	then
 		echo "ERROR: [TBD]The Veeam Software certificate should be installed."
 		echo "ERROR: [TBD]Please install ueficert package and complete MOK enrollment to continue."
-		exit 1
 	fi
 fi
