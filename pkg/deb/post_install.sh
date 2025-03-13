@@ -1,4 +1,4 @@
-if ! dpkg-query -l | grep linux-headers | grep -qw "$(uname -r)"
+if [ -z "$(dkms status -m blksnap -v #PACKAGE_VERSION# -k $(uname -r) | grep 'installed')" ]
 then
 	echo "ERROR: [TBD]The 'linux-headers' package for the current '$(uname -r)' kernel was not found."
 	echo "ERROR: [TBD]Install the 'linux-headers-$(uname -r)' package into the system."

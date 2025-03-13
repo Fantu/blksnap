@@ -22,13 +22,6 @@ designed to ensure the Availability of your Linux server instances, whether
 they reside in the public cloud or on premises.
 
 %post
-if ! rpm -qa | grep -qw "kernel-devel-$(uname -r)"
-then
-  echo "ERROR: [TBD]The 'kernel-devel-$(uname -r)' package for the current kernel was not found."
-  echo "ERROR: [TBD]Install the 'kernel-devel-$(uname -r)' package into the system."
-  echo "ERROR: [TBD]Or install latest 'kernel' and 'kernel-devel' packages and reboot the system."
-fi
-
 POSTINST="/usr/lib/dkms/common.postinst"
 if [ -f $POSTINST ]
 then
@@ -36,6 +29,8 @@ then
   RETVAL=$?
   if [ -z "$(dkms status -m %{name} -v %{version} -k $(uname -r) | grep 'installed')" ] ; then
       echo "ERROR: [TBD]Module "%{name}" is not installed for kernel $(uname -r)"
+      echo "ERROR: [TBD]Install the 'kernel-devel-$(uname -r)' package into the system."
+      echo "ERROR: [TBD]Or install latest 'kernel' and 'kernel-devel' packages and reboot the system."
       exit 1
   fi
   exit $RETVAL
@@ -51,6 +46,8 @@ else
     fi
   fi
   echo "ERROR: [TBD]Module "%{name}" is not installed for kernel $(uname -r)"
+  echo "ERROR: [TBD]Install the 'kernel-devel-$(uname -r)' package into the system."
+  echo "ERROR: [TBD]Or install latest 'kernel' and 'kernel-devel' packages and reboot the system."
   exit 1
 fi
 
