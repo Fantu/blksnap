@@ -50,12 +50,14 @@ CTracker::~CTracker()
 
 bool CTracker::Attach()
 {
-    struct bdevfilter_name name = {
+    struct bdevfilter_attach attach = {
         .devpath = (__u64)m_devicePath.c_str(),
         .name = BLKSNAP_FILTER_NAME,
+        .opt = 0,
+        .optlen = 0,
     };
 
-    if (::ioctl(m_bdevfilter, BDEVFILTER_ATTACH, &name) < 0) {
+    if (::ioctl(m_bdevfilter, BDEVFILTER_ATTACH, &attach) < 0) {
         if (errno == EALREADY)
             return false;
         else

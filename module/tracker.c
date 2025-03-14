@@ -96,7 +96,8 @@ static bool tracker_submit_bio(struct bio *bio)
 }
 
 #ifdef BLKSNAP_STANDALONE
-static struct blkfilter *tracker_attach(struct block_device *bdev, char *bdevpath)
+static struct blkfilter *tracker_attach(struct block_device *bdev,
+				char *bdevpath,	__u8 __user *opt, __u32 optlen)
 #else
 static struct blkfilter *tracker_attach(struct block_device *bdev)
 #endif
@@ -122,6 +123,8 @@ static struct blkfilter *tracker_attach(struct block_device *bdev)
 
 #ifdef BLKSNAP_STANDALONE
 	tracker->orig_bdevpath = bdevpath;
+	(void)opt;
+	(void)optlen;
 #else
 	tracker->orig_bdev = bdev;
 #endif

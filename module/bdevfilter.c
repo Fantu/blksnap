@@ -81,10 +81,10 @@ static void freeze_ref_release(struct percpu_ref *freeze_ref)
 	wake_up_all(&flt->freeze_wq);
 }
 
-static int ioctl_attach(struct bdevfilter_name __user *argp)
+static int ioctl_attach(struct bdevfilter_attach __user *argp)
 {
 	char *devpath;
-	struct bdevfilter_name karg;
+	struct bdevfilter_attach karg;
 	struct bdevfilter_operations *fops;
 	struct bdev_extension *ext_tmp, *ext_new;
 	struct blkfilter *flt;
@@ -139,7 +139,7 @@ static int ioctl_attach(struct bdevfilter_name __user *argp)
 
 	task_flags = memalloc_noio_save();
 
-	flt = fops->attach(bdev, devpath);
+	flt = fops->attach(bdev, devpath, (__u8 __user *)karg.opt, karg.optlen);
 	if (IS_ERR(flt)) {
 		pr_debug("Failed to attach device to filter '%s'\n", fops->name);
 		ret = PTR_ERR(flt);
@@ -431,7 +431,6 @@ static inline bool bdev_filters_apply(struct bio *bio)
 	return skip;
 }
 
-
 /**
  * submit_bio_noacct_notrace() - Execute submit_bio_noacct() without handling.
  */
@@ -696,7 +695,7 @@ static struct ftrace_ops ops_bdev_disk_changed = {
 static long unlocked_ioctl(struct file *filp, unsigned int cmd,
 				unsigned long arg)
 {
-	void *argp = (void __user *)arg;
+	void __user *argp = (void __user *)arg;
 
 	switch (cmd) {
 	case BDEVFILTER_ATTACH:

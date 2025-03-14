@@ -8,8 +8,21 @@
 #define BDEVFILTER_NAME_LENGTH	32
 
 /**
- * struct bdevfilter_name - parameter for BLKFILTER_ATTACH and BLKFILTER_DETACH
- *      ioctl.
+ * struct bdevfilter_attach - parameter for BLKFILTER_ATTACH ioctl.
+ *
+ * @name:       Name of block device filter.
+ * @opt:	Userspace buffer with options.
+ * @optlen:	Size of data at @opt.
+ */
+struct bdevfilter_attach {
+	__u64 devpath;
+	__u8 name[BDEVFILTER_NAME_LENGTH];
+	__u64 opt;
+	__u32 optlen;
+};
+
+/**
+ * struct bdevfilter_name - parameter for BLKFILTER_DETACH ioctl.
  *
  * @name:       Name of block device filter.
  */
@@ -35,7 +48,7 @@ struct bdevfilter_ctl {
 };
 
 
-#define BDEVFILTER_ATTACH	_IOWR('F', 140, struct bdevfilter_name)
+#define BDEVFILTER_ATTACH	_IOWR('F', 140, struct bdevfilter_attach)
 #define BDEVFILTER_DETACH	_IOWR('F', 141, struct bdevfilter_name)
 #define BDEVFILTER_CTL		_IOWR('F', 142, struct bdevfilter_ctl)
 
