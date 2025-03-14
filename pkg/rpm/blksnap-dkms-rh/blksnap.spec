@@ -22,17 +22,23 @@ designed to ensure the Availability of your Linux server instances, whether
 they reside in the public cloud or on premises.
 
 %post
+check_installed()
+{
+  if [ -z "$(dkms status -m %{name} -v %{version} -k $(uname -r) | grep 'installed')" ]
+  then
+    echo "ERROR: [TBD]Module "%{name}" is not installed for kernel $(uname -r)"
+    echo "ERROR: [TBD]Install the 'kernel-devel-$(uname -r)' package into the system."
+    echo "ERROR: [TBD]Or install latest 'kernel' and 'kernel-devel' packages and reboot the system."
+    exit 1
+  fi
+}
+
 POSTINST="/usr/lib/dkms/common.postinst"
 if [ -f $POSTINST ]
 then
   $POSTINST %{name} %{version}
   RETVAL=$?
-  if [ -z "$(dkms status -m %{name} -v %{version} -k $(uname -r) | grep 'installed')" ] ; then
-      echo "ERROR: [TBD]Module "%{name}" is not installed for kernel $(uname -r)"
-      echo "ERROR: [TBD]Install the 'kernel-devel-$(uname -r)' package into the system."
-      echo "ERROR: [TBD]Or install latest 'kernel' and 'kernel-devel' packages and reboot the system."
-      exit 1
-  fi
+  check_installed
   exit $RETVAL
 else
   echo "$POSTINST does not exist"
@@ -41,14 +47,12 @@ else
     echo %{name}"-"%{version}" build"
     if dkms autoinstall -m %{name} -v %{version}
     then
+      check_installed
       echo %{name}"-"%{version}" installed"
       exit 0
     fi
   fi
-  echo "ERROR: [TBD]Module "%{name}" is not installed for kernel $(uname -r)"
-  echo "ERROR: [TBD]Install the 'kernel-devel-$(uname -r)' package into the system."
-  echo "ERROR: [TBD]Or install latest 'kernel' and 'kernel-devel' packages and reboot the system."
-  exit 1
+  check_installed
 fi
 
 %postun
