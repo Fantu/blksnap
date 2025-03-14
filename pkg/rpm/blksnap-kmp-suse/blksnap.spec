@@ -4,7 +4,7 @@ License: GPL-2.0
 Packager: "#PACKAGE_VENDOR#"
 Vendor: "#PACKAGE_VENDOR#"
 Group: System/Kernel
-Summary: Block device snapshot (kernel module)
+Summary: Veeam Agent for Linux (kernel module)
 Version: #PACKAGE_VERSION#
 Release: #PACKAGE_RELEASE#
 Source0: %{name}-%{version}.tar.gz
@@ -18,7 +18,9 @@ Requires: modutils mokutil suse-module-tools
 
 %description
 This kernel module implements snapshot and changed block tracking
-functionality.
+functionality used by Veeam Agent for Linux - simple and FREE backup agent
+designed to ensure the Availability of your Linux server instances, whether
+they reside in the public cloud or on premises.
 
 %package KMP
 Summary: Block device snapshot (binary kernel module package)

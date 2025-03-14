@@ -5,7 +5,7 @@ Packager: "#PACKAGE_VENDOR#"
 Vendor:  "#PACKAGE_VENDOR#"
 Group:   System Environment/Kernel
 License: GPL-2
-Summary: Block device snapshot (kernel module)
+Summary: Veeam Agent for Linux (kernel module)
 URL:     http://github.com/veeam/blksnap
 ExclusiveOS:    linux
 ExclusiveArch:  %{ix86} x86_64
@@ -15,9 +15,10 @@ Source0: %{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-buildroot
 
 %description
-This package provides the blksnap kernel module.
-It is built to depend upon the specific ABI provided by a range of releases
-of the same variant of the Linux kernel and not on any one specific build.
+This kernel module implements snapshot and changed block tracking
+functionality used by Veeam Agent for Linux - simple and FREE backup agent
+designed to ensure the Availability of your Linux server instances, whether
+they reside in the public cloud or on premises.
 
 %package -n kmod-%{name}-patch
 Summary: %{name} patch kernel module

@@ -13,11 +13,8 @@ Conflicts: veeamsnap
 Replaces: veeamsnap
 Recommends: blksnap-tools
 Suggests: blksnap-dev
-Description: blksnap kernel module
- This kernel module implements non-persistent snapshots of block devices
- and changed block tracking functionality for backup.
- The module is developed by Veeam with the condition of simply adding it
- to the upstream.
- Therefore, the module is divided into two parts: bdevfilter and blksnap.
- bdevfilter provides the ability to intercept I/O units (bio).
- The main logic is concentrated in blksnap.
+Description: Veeam Agent for Linux (kernel module)
+ This kernel module implements snapshot and changed block tracking
+ functionality used by Veeam Agent for Linux - simple and FREE backup agent
+ designed to ensure the Availability of your Linux server instances, whether
+ they reside in the public cloud or on premises.
