@@ -36,12 +36,13 @@ imagefile_make ${IMAGEFILE_1} 64
 echo "new image file ${IMAGEFILE_1}"
 
 DEVICE_1=$(loop_device_attach ${IMAGEFILE_1})
+mkfs.ext4 ${DEVICE_1}
 echo "new device ${DEVICE_1}"
 
 MOUNTPOINT_1=${MPDIR}/simple_1
 mkdir -p ${MOUNTPOINT_1}
 mount ${DEVICE_1} ${MOUNTPOINT_1}
-generate_files ${MOUNTPOINT_1} "before" 9
+generate_files_direct ${MOUNTPOINT_1} "before" 9
 
 # -- 2 --
 # create second device
@@ -50,12 +51,13 @@ imagefile_make ${IMAGEFILE_2} 128
 echo "new image file ${IMAGEFILE_2}"
 
 DEVICE_2=$(loop_device_attach ${IMAGEFILE_2})
+mkfs.ext4 ${DEVICE_2}
 echo "new device ${DEVICE_2}"
 
 MOUNTPOINT_2=${MPDIR}/simple_2
 mkdir -p ${MOUNTPOINT_2}
 mount ${DEVICE_2} ${MOUNTPOINT_2}
-generate_files ${MOUNTPOINT_2} "before" 9
+generate_files_direct ${MOUNTPOINT_2} "before" 9
 drop_cache
 
 #echo "Block device prepared, press ..."
@@ -63,25 +65,21 @@ drop_cache
 
 # -- 1 --
 # Create first snapshot
-blksnap_snapshot_create "${DEVICE_1}"
-
 DIFF_STORAGE_1=${DIFF_STORAGE_DIR}/diff_storage1
 rm -f ${DIFF_STORAGE_1}
 fallocate --length 1GiB ${DIFF_STORAGE_1}
-blksnap_snapshot_appendstorage ${DIFF_STORAGE_1}
 
+blksnap_snapshot_create "${DEVICE_1}" "${DIFF_STORAGE_1}" "1G"
 blksnap_snapshot_take
 SNAPID_1=${ID}
 
 # -- 2 --
 # Create second snapshot
-blksnap_snapshot_create "${DEVICE_2}"
-
 DIFF_STORAGE_2=${DIFF_STORAGE_DIR}/diff_storage2
 rm -f ${DIFF_STORAGE_2}
 fallocate --length 1GiB ${DIFF_STORAGE_2}
-blksnap_snapshot_appendstorage ${DIFF_STORAGE_2}
 
+blksnap_snapshot_create "${DEVICE_2}" "${DIFF_STORAGE_2}" "1G"
 blksnap_snapshot_take
 SNAPID_2=${ID}
 
@@ -92,23 +90,24 @@ SNAPID_2=${ID}
 # -- 1 --
 #Check first snapshot
 echo "Write to original"
-generate_files ${MOUNTPOINT_1} "after" 3
+generate_files_direct ${MOUNTPOINT_1} "after" 3
 drop_cache
 
 check_files ${MOUNTPOINT_1}
 
 echo "Check snapshots"
+DEVICE_IMAGE_1=$(blksnap_get_image ${DEVICE_1})
 IMAGE_1=${TESTDIR}/image1
 mkdir -p ${IMAGE_1}
-mount /dev/veeamblksnapimg0 ${IMAGE_1}
+mount ${DEVICE_IMAGE_1} ${IMAGE_1}
 check_files ${IMAGE_1}
 
 echo "Write to snapshot"
-generate_files ${IMAGE_1} "snapshot" 3
+generate_files_direct ${IMAGE_1} "snapshot" 3
 
 drop_cache
-umount /dev/veeamblksnapimg0
-mount /dev/veeamblksnapimg0 ${IMAGE_1}
+umount ${DEVICE_IMAGE_1}
+mount ${DEVICE_IMAGE_1} ${IMAGE_1}
 
 check_files ${IMAGE_1}
 
@@ -118,23 +117,24 @@ umount ${IMAGE_1}
 # -- 2 --
 #Check second snapshot
 echo "Write to original"
-generate_files ${MOUNTPOINT_2} "after" 3
+generate_files_direct ${MOUNTPOINT_2} "after" 3
 drop_cache
 
 check_files ${MOUNTPOINT_2}
 
 echo "Check snapshots"
+DEVICE_IMAGE_2=$(blksnap_get_image ${DEVICE_2})
 IMAGE_2=${TESTDIR}/image2
 mkdir -p ${IMAGE_2}
-mount /dev/veeamblksnapimg1 ${IMAGE_2}
+mount ${DEVICE_IMAGE_2} ${IMAGE_2}
 check_files ${IMAGE_2}
 
 echo "Write to snapshot"
-generate_files ${IMAGE_2} "snapshot" 3
+generate_files_direct ${IMAGE_2} "snapshot" 3
 
 drop_cache
-umount /dev/veeamblksnapimg1
-mount /dev/veeamblksnapimg1 ${IMAGE_2}
+umount ${DEVICE_IMAGE_2}
+mount ${DEVICE_IMAGE_2} ${IMAGE_2}
 
 check_files ${IMAGE_2}
 
