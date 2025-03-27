@@ -21,13 +21,15 @@ designed to ensure the Availability of your Linux server instances, whether
 they reside in the public cloud or on premises.
 
 %package -n kmod-%{name}-patch
-Summary: %{name} patch kernel module
+Summary: Veeam Agent for Linux (kernel module)
 Group: System Environment/Kernel
 Requires: python3, kmod-blksnap = %{version}
 
 %description -n kmod-%{name}-patch
-This package provides the ${kmod_name} kernel modules built for the Linux
-kernel %{kversion} for the %{_target_cpu} family of processors.
+This kernel module implements snapshot and changed block tracking
+functionality used by Veeam Agent for Linux - simple and FREE backup agent
+designed to ensure the Availability of your Linux server instances, whether
+they reside in the public cloud or on premises.
 
 # Disable the building of the debug package(s).
 %define debug_package %{nil}

@@ -23,12 +23,14 @@ designed to ensure the Availability of your Linux server instances, whether
 they reside in the public cloud or on premises.
 
 %package KMP
-Summary: Block device snapshot (binary kernel module package)
+Summary: Veeam Agent for Linux (kernel module)
 Group:	System/Kernel
 
 %description KMP
 This kernel module implements snapshot and changed block tracking
-functionality.
+functionality used by Veeam Agent for Linux - simple and FREE backup agent
+designed to ensure the Availability of your Linux server instances, whether
+they reside in the public cloud or on premises.
 
 %prep
 %setup -q -n %{name}-%{version}

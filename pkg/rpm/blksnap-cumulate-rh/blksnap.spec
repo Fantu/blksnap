@@ -22,15 +22,17 @@ designed to ensure the Availability of your Linux server instances, whether
 they reside in the public cloud or on premises.
 
 %package -n kmod-%{name}
-Summary: %{name} kernel module
+Summary: Veeam Agent for Linux (kernel module)
 Group: System Environment/Kernel
 Provides: %{name} = %{version}
 Requires: kmod mokutil python3
 Conflicts: veeamsnap
 
 %description -n kmod-%{name}
-This package provides the ${kmod_name} kernel modules built for the Linux
-kernels %{kversion} for the %{_target_cpu} family of processors.
+This kernel module implements snapshot and changed block tracking
+functionality used by Veeam Agent for Linux - simple and FREE backup agent
+designed to ensure the Availability of your Linux server instances, whether
+they reside in the public cloud or on premises.
 
 # Disable the building of the debug package(s).
 %define debug_package %{nil}
