@@ -25,7 +25,7 @@ they reside in the public cloud or on premises.
 Summary: Veeam Agent for Linux (kernel module)
 Group: System Environment/Kernel
 Provides: %{name} = %{version}
-Requires: kmod mokutil python3
+Requires: kmod python3
 Conflicts: veeamsnap
 
 %description -n kmod-%{name}
@@ -73,12 +73,23 @@ done
 %{__rm} -rf %{buildroot}
 
 %post -n kmod-%{name}
-if mokutil --sb-state | grep -qw "SecureBoot enabled"
+if [ -d /sys/firmware/efi ]
 then
-	if ! mokutil --list-enrolled | grep -qw "CN=Veeam Software Group GmbH"
+	if [ -f /sys/firmware/efi/efivars/SecureBootEnable-* ]
 	then
-		echo "ERROR: [TBD]The Veeam Software certificate should be installed."
-		echo "ERROR: [TBD]Please install ueficert package and complete MOK enrollment to continue."
+		if which mokutil
+		then
+			if mokutil --list-enrolled | grep -qw "CN=Veeam Software Group GmbH"
+			then
+				echo "[TBD]The Veeam Software certificate is installed."
+			else
+				echo "ERROR: [TBD]The Veeam Software certificate should be installed."
+				echo "ERROR: [TBD]Please install 'veeam-uefi-cert' package and complete MOK enrollment to continue."
+			fi
+		else
+			echo "ERROR: [TBD]The 'mokutil' is not installed."
+			echo "ERROR: [TBD]Please install 'mokutil' package, install 'veeam-uefi-cert' package and complete MOK enrollment to continue."
+		fi
 	fi
 fi
 
