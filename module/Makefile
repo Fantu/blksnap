@@ -1,14 +1,14 @@
 # SPDX-License-Identifier: GPL-2.0
 # Copyright (C) 2023 Veeam Software Group GmbH
 
-# EXTRA_CFLAGS += "-D DEBUG"
-# EXTRA_CFLAGS += "-D CONFIG_BLKSNAP_CHUNK_DBG"
-# EXTRA_CFLAGS += "-D CONFIG_BLKSNAP_COW_SCHEDULE"
-EXTRA_CFLAGS += "-D BLKSNAP_STANDALONE"
-EXTRA_CFLAGS += "-D BLKSNAP_MODIFICATION"
-EXTRA_CFLAGS += "-D BLKSNAP_MEMSTAT"
-EXTRA_CFLAGS += "-D BLKSNAP_FILELOG"
-EXTRA_CFLAGS += "-D BLKSNAP_HISTOGRAM"
+# ccflags-y += -D DEBUG
+# ccflags-y += -D CONFIG_BLKSNAP_CHUNK_DBG
+# ccflags-y += -D CONFIG_BLKSNAP_COW_SCHEDULE
+ccflags-y += -D BLKSNAP_STANDALONE
+ccflags-y += -D BLKSNAP_MODIFICATION
+ccflags-y += -D BLKSNAP_MEMSTAT
+ccflags-y += -D BLKSNAP_FILELOG
+ccflags-y += -D BLKSNAP_HISTOGRAM
 
 include ${M}/Makefile-config
 include ${M}/Makefile-bdevfilter

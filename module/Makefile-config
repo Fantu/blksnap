@@ -4,16 +4,16 @@
 #
 # Configuration relevant only for the bdevfilter
 #
-EXTRA_CFLAGS += $(shell 							\
+ccflags-y += $(shell 							\
 	grep -qw "struct ftrace_regs" $(srctree)/include/linux/ftrace.h	&&	\
 		echo -D HAVE_FTRACE_REGS)
-EXTRA_CFLAGS += $(shell 							\
+ccflags-y += $(shell 							\
 	grep -qw "ftrace_regs_set_instruction_pointer" $(srctree)/include/linux/ftrace.h && \
 		echo -D HAVE_FTRACE_REGS_SET_INSTRUCTION_POINTER)
-EXTRA_CFLAGS += $(shell 							\
+ccflags-y += $(shell 							\
 	grep -qw "void submit_bio_noacct" $(srctree)/include/linux/blkdev.h &&	\
 		echo -D HAVE_VOID_SUBMIT_BIO_NOACCT)
-EXTRA_CFLAGS += $(shell 							\
+ccflags-y += $(shell 							\
 	grep -qw "TSK_TRACE_FL_TRACE_BIT" $(srctree)/include/linux/ftrace.h &&	\
 		echo -D HAVE_NOT_FTRACE_FREE_FILTER)
 #
@@ -21,7 +21,7 @@ EXTRA_CFLAGS += $(shell 							\
 # include/linux/blkdev.h
 # void bdev_mark_dead(struct block_device *bdev, bool surprise);
 #
-EXTRA_CFLAGS += $(shell test -f $(srctree)/include/linux/blkdev.h &&		\
+ccflags-y += $(shell test -f $(srctree)/include/linux/blkdev.h &&		\
 	grep -qw "void bdev_mark_dead" $(srctree)/include/linux/blkdev.h &&	\
 		echo -D HAVE_BDEV_MARK_DEAD)
 #
@@ -30,7 +30,7 @@ EXTRA_CFLAGS += $(shell test -f $(srctree)/include/linux/blkdev.h &&		\
 # void del_gendisk(struct gendisk *gp);
 # int bdev_disk_changed(struct gendisk *disk, bool invalidate)
 #
-EXTRA_CFLAGS += $(shell test -f $(srctree)/include/linux/blkdev.h &&		\
+ccflags-y += $(shell test -f $(srctree)/include/linux/blkdev.h &&		\
 	grep -w "int bdev_disk_changed" $(srctree)/include/linux/blkdev.h | grep -qw "struct gendisk" && \
 		echo -D HAVE_BDEV_DISK_CHANGED_DISK)
 #
@@ -39,7 +39,7 @@ EXTRA_CFLAGS += $(shell test -f $(srctree)/include/linux/blkdev.h &&		\
 # void del_gendisk(struct gendisk *gp);
 # int bdev_disk_changed(struct gendisk *disk, bool invalidate)
 #
-EXTRA_CFLAGS += $(shell test -f $(srctree)/include/linux/genhd.h &&		\
+ccflags-y += $(shell test -f $(srctree)/include/linux/genhd.h &&		\
 	grep -w "int bdev_disk_changed" $(srctree)/include/linux/genhd.h | grep -qw "struct gendisk" && \
 		echo -D HAVE_BDEV_DISK_CHANGED_DISK)
 #
@@ -48,7 +48,7 @@ EXTRA_CFLAGS += $(shell test -f $(srctree)/include/linux/genhd.h &&		\
 # void del_gendisk(struct gendisk *gp);
 # int bdev_disk_changed(struct block_device *bdev, bool invalidate)
 #
-EXTRA_CFLAGS += $(shell test -f $(srctree)/include/linux/genhd.h &&		\
+ccflags-y += $(shell test -f $(srctree)/include/linux/genhd.h &&		\
 	grep -w "int bdev_disk_changed" $(srctree)/include/linux/genhd.h | grep -qw "struct block_device" && \
 		echo -D HAVE_BDEV_DISK_CHANGED_BDEV)
 #
@@ -56,106 +56,106 @@ EXTRA_CFLAGS += $(shell test -f $(srctree)/include/linux/genhd.h &&		\
 # include/linux/genhd.h
 # struct block_device *disk_part_iter_next(struct disk_part_iter *piter);
 #
-EXTRA_CFLAGS += $(shell test -f $(srctree)/include/linux/genhd.h &&		\
+ccflags-y += $(shell test -f $(srctree)/include/linux/genhd.h &&		\
 	grep -qw "struct disk_part_iter" $(srctree)/include/linux/genhd.h &&	\
 		echo -D HAVE_DISK_PART_ITER)
 
 #
 # Configuration relevant for the blksnap and bdevfilter
 #
-EXTRA_CFLAGS += $(shell 							\
+ccflags-y += $(shell 							\
 	grep -qw "blk_qc_t submit_bio_noacct" $(srctree)/include/linux/blkdev.h	&& \
 		echo -D HAVE_QC_SUBMIT_BIO_NOACCT)
 
-EXTRA_CFLAGS += $(shell 							\
+ccflags-y += $(shell 							\
 	grep -qw "struct super_block \*freeze_bdev"				\
 		$(srctree)/include/linux/blkdev.h &&				\
 		echo -D HAVE_SUPER_BLOCK_FREEZE)
-EXTRA_CFLAGS += $(shell 							\
+ccflags-y += $(shell 							\
 	grep -qw "int bdev_freeze"						\
 		$(srctree)/include/linux/blkdev.h &&				\
 		echo -D HAVE_BDEV_FREEZE)
-EXTRA_CFLAGS += $(shell 							\
+ccflags-y += $(shell 							\
 	grep -qw "\*bi_disk;" $(srctree)/include/linux/blk_types.h &&		\
 		echo -D HAVE_BI_BDISK)
-EXTRA_CFLAGS += $(shell test -f $(srctree)/include/linux/blk_types.h &&		\
+ccflags-y += $(shell test -f $(srctree)/include/linux/blk_types.h &&		\
 	grep -qw "\*bd_queue;" $(srctree)/include/linux/blk_types.h &&		\
 		echo -D HAVE_BD_QUEUE)
-EXTRA_CFLAGS += $(shell test -f $(srctree)/include/linux/genhd.h &&		\
+ccflags-y += $(shell test -f $(srctree)/include/linux/genhd.h &&		\
 	grep -qw "sector_t bdev_nr_sectors" $(srctree)/include/linux/genhd.h &&	\
 		echo -D HAVE_BDEV_NR_SECTORS)
-EXTRA_CFLAGS += $(shell test -f $(srctree)/include/linux/blkdev.h &&		\
+ccflags-y += $(shell test -f $(srctree)/include/linux/blkdev.h &&		\
 	grep -qw "sector_t bdev_nr_sectors" $(srctree)/include/linux/blkdev.h && \
 		echo -D HAVE_BDEV_NR_SECTORS)
-EXTRA_CFLAGS += $(shell test -f $(srctree)/include/linux/genhd.h &&		\
+ccflags-y += $(shell test -f $(srctree)/include/linux/genhd.h &&		\
 	grep -qw "int add_disk" $(srctree)/include/linux/genhd.h &&		\
 		echo -D HAVE_ADD_DISK_RESULT)
-EXTRA_CFLAGS += $(shell test -f $(srctree)/include/linux/blkdev.h &&		\
+ccflags-y += $(shell test -f $(srctree)/include/linux/blkdev.h &&		\
 	grep -qw "int add_disk" $(srctree)/include/linux/blkdev.h &&		\
 		echo -D HAVE_ADD_DISK_RESULT)
-EXTRA_CFLAGS += $(shell test -f $(srctree)/include/linux/genhd.h &&		\
+ccflags-y += $(shell test -f $(srctree)/include/linux/genhd.h &&		\
 	grep -qw "int __must_check add_disk" $(srctree)/include/linux/genhd.h && \
 		echo -D HAVE_ADD_DISK_RESULT)
-EXTRA_CFLAGS += $(shell test -f $(srctree)/include/linux/blkdev.h &&		\
+ccflags-y += $(shell test -f $(srctree)/include/linux/blkdev.h &&		\
 	grep -qw "int __must_check add_disk" $(srctree)/include/linux/blkdev.h && \
 		echo -D HAVE_ADD_DISK_RESULT)
-EXTRA_CFLAGS += $(shell test -f $(srctree)/include/linux/genhd.h &&		\
+ccflags-y += $(shell test -f $(srctree)/include/linux/genhd.h &&		\
 	grep -qw "void blk_cleanup_disk" $(srctree)/include/linux/genhd.h &&	\
 		echo -D HAVE_BLK_CLEANUP_DISK)
-EXTRA_CFLAGS += $(shell test -f $(srctree)/include/linux/blkdev.h &&		\
+ccflags-y += $(shell test -f $(srctree)/include/linux/blkdev.h &&		\
 	grep -qw "void blk_cleanup_disk" $(srctree)/include/linux/blkdev.h &&	\
 		echo -D HAVE_BLK_CLEANUP_DISK)
-EXTRA_CFLAGS += $(shell test -f $(srctree)/include/linux/genhd.h &&		\
+ccflags-y += $(shell test -f $(srctree)/include/linux/genhd.h &&		\
 		echo -D HAVE_GENHD_H)
-EXTRA_CFLAGS += $(shell test -f $(srctree)/include/linux/blkdev.h &&		\
+ccflags-y += $(shell test -f $(srctree)/include/linux/blkdev.h &&		\
 	grep -qw "struct blk_holder_ops" $(srctree)/include/linux/blkdev.h &&	\
 		echo -D HAVE_BLK_HOLDER_OPS)
-EXTRA_CFLAGS += $(shell test -f $(srctree)/include/linux/blkdev.h &&		\
+ccflags-y += $(shell test -f $(srctree)/include/linux/blkdev.h &&		\
 	grep -qw "struct bdev_handle" $(srctree)/include/linux/blkdev.h &&	\
 		echo -D HAVE_BDEV_HANDLE)
-EXTRA_CFLAGS += $(shell test -f $(srctree)/include/linux/blkdev.h &&		\
+ccflags-y += $(shell test -f $(srctree)/include/linux/blkdev.h &&		\
 	grep -qw "bdev_file_open_by_dev" $(srctree)/include/linux/blkdev.h &&	\
 		echo -D HAVE_BDEV_FILE_OPEN)
-EXTRA_CFLAGS += $(shell test -f $(srctree)/include/linux/bvec.h &&		\
+ccflags-y += $(shell test -f $(srctree)/include/linux/bvec.h &&		\
 	grep -qw "inline void bvec_set_page" $(srctree)/include/linux/bvec.h &&	\
 		echo -D HAVE_BVEC_SET_PAGE)
-EXTRA_CFLAGS += $(shell test -f $(srctree)/include/linux/blkdev.h  &&		\
+ccflags-y += $(shell test -f $(srctree)/include/linux/blkdev.h  &&		\
 	grep -qw "define BLK_OPEN_READ" $(srctree)/include/linux/blkdev.h &&	\
 		echo -D HAVE_BLK_OPEN_MODE)
-EXTRA_CFLAGS += $(shell test -f $(srctree)/include/linux/genhd.h  &&		\
+ccflags-y += $(shell test -f $(srctree)/include/linux/genhd.h  &&		\
 	grep -qw "define blk_alloc_disk" $(srctree)/include/linux/genhd.h &&	\
 		echo -D HAVE_BLK_ALLOC_DISK)
-EXTRA_CFLAGS += $(shell test -f $(srctree)/include/linux/blkdev.h  &&		\
+ccflags-y += $(shell test -f $(srctree)/include/linux/blkdev.h  &&		\
 	grep -qw "define blk_alloc_disk" $(srctree)/include/linux/blkdev.h &&	\
 		echo -D HAVE_BLK_ALLOC_DISK)
-EXTRA_CFLAGS += $(shell test -f $(srctree)/include/linux/genhd.h  &&		\
+ccflags-y += $(shell test -f $(srctree)/include/linux/genhd.h  &&		\
 	grep -qw "struct mutex open_mutex" $(srctree)/include/linux/genhd.h &&	\
 		echo -D HAVE_GENDISK_OPEN_MUTEX)
-EXTRA_CFLAGS += $(shell test -f $(srctree)/include/linux/blkdev.h  &&		\
+ccflags-y += $(shell test -f $(srctree)/include/linux/blkdev.h  &&		\
 	grep -qw "struct mutex open_mutex" $(srctree)/include/linux/blkdev.h &&	\
 		echo -D HAVE_GENDISK_OPEN_MUTEX)
-EXTRA_CFLAGS += $(shell test -f $(srctree)/include/linux/blkdev.h  &&		\
+ccflags-y += $(shell test -f $(srctree)/include/linux/blkdev.h  &&		\
 	grep -qw "static inline bool disk_live" $(srctree)/include/linux/blkdev.h && \
 		echo -D HAVE_DISK_LIVE)
-EXTRA_CFLAGS += $(shell test -f $(srctree)/include/linux/highmem.h  &&		\
+ccflags-y += $(shell test -f $(srctree)/include/linux/highmem.h  &&		\
 	grep -qw "static inline void memcpy_page" $(srctree)/include/linux/highmem.h && \
 		echo -D HAVE_MEMCPY_PAGE)
-EXTRA_CFLAGS += $(shell test -f $(srctree)/include/linux/bio.h  &&		\
+ccflags-y += $(shell test -f $(srctree)/include/linux/bio.h  &&		\
 	grep -qw "struct bio \*bio_alloc_clone" $(srctree)/include/linux/bio.h && \
 		echo -D HAVE_BIO_ALLOC_CLONE)
-EXTRA_CFLAGS += $(shell test -f $(srctree)/include/linux/bio.h  &&		\
+ccflags-y += $(shell test -f $(srctree)/include/linux/bio.h  &&		\
 	grep -w "bio_alloc_bioset" $(srctree)/include/linux/bio.h | grep -qw "struct block_device"&& \
 		echo -D HAVE_BIO_ALLOC_BIOSET_BDEV)
-EXTRA_CFLAGS += $(shell test -f $(srctree)/include/linux/fs.h  &&		\
+ccflags-y += $(shell test -f $(srctree)/include/linux/fs.h  &&		\
 	grep -w "\*ki_complete" $(srctree)/include/linux/fs.h | grep -qw "long ret2" && \
 		echo -D HAVE_KI_COMPLETE_RET2)
-EXTRA_CFLAGS += $(shell test -f $(srctree)/include/linux/blk-crypto-profile.h  &&		\
+ccflags-y += $(shell test -f $(srctree)/include/linux/blk-crypto-profile.h  &&		\
 	grep -qw "struct blk_crypto_profile" $(srctree)/include/linux/blk-crypto-profile.h &&	\
 		echo -D HAVE_BLK_CRYPTO_PROFILE)
-EXTRA_CFLAGS += $(shell test -f $(srctree)/include/linux/blkdev.h &&		\
+ccflags-y += $(shell test -f $(srctree)/include/linux/blkdev.h &&		\
 	grep "__blk_alloc_disk" $(srctree)/include/linux/blkdev.h |		\
 	grep -qw "struct queue_limits" &&					\
 		echo -D HAVE_BDEV_QUEUE_LIMITS)
-EXTRA_CFLAGS += $(shell test -f $(srctree)/include/linux/fs.h  &&		\
+ccflags-y += $(shell test -f $(srctree)/include/linux/fs.h  &&		\
 	grep -qw "kiocb_start_write" $(srctree)/include/linux/fs.h &&		\
 		echo -D HAVE_KIOCB_START_WRITE)
