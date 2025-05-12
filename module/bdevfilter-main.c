@@ -99,7 +99,7 @@ static int ioctl_attach(struct bdevfilter_attach __user *argp)
 	devpath = strndup_user((const char __user *)karg.devpath, PATH_MAX);
 	if (IS_ERR(devpath))
 		return PTR_ERR(devpath);
-	pr_debug("Attach '%s' to device '%s'\n", karg.name, devpath);
+	pr_debug("Attach filter '%s' to the block device '%s'\n", karg.name, devpath);
 	ret = bdev_open(devpath, &bdev_holder, &bdev);
 	if (ret) {
 		pr_err("Failed to open a block device '%s'\n", devpath);
@@ -161,7 +161,7 @@ static int ioctl_attach(struct bdevfilter_attach __user *argp)
 	if (ext_tmp) {
 		if (ext_tmp->flt->fops == fops) {
 			ret = -EALREADY;
-			pr_debug("Device is already attached\n");
+			pr_debug("Filter is already attached\n");
 		} else {
 			ret = -EBUSY;
 			pr_debug("Device is busy\n");
@@ -171,6 +171,7 @@ static int ioctl_attach(struct bdevfilter_attach __user *argp)
 		list_add_tail(&ext_new->link, &bdev_extension_list);
 		flt = NULL;
 		ext_new = NULL;
+		pr_debug("Filter attached\n");
 	}
 	spin_unlock(&bdev_extension_list_lock);
 
@@ -214,6 +215,16 @@ static inline int __blkfilter_detach(dev_t dev_id, char *name, size_t name_lengt
 		}
 	}
 	spin_unlock(&bdev_extension_list_lock);
+
+	if (ret) {
+		pr_err("Cannot detach filter from block device '%d:%d'\n",
+			MAJOR(dev_id), MINOR(dev_id));
+		if (ret == -ENOENT)
+			pr_err("Filter not found\n");
+		else if (ret == -EINVAL)
+			pr_err("Invalid filters name\n");
+	} else
+		pr_debug("Filter detached\n")
 
 	kfree(ext);
 	bdevfilter_put(flt);
@@ -300,6 +311,8 @@ static int ioctl_ctl(struct bdevfilter_ctl __user *argp)
 	spin_unlock(&bdev_extension_list_lock);
 
 	if (!flt) {
+		pr_err("Filter for the block device '%d:%d' not found\n",
+			MAJOR(bdev->bd_dev), MINOR(bdev->bd_dev));
 		ret = -ENOENT;
 		goto out_bdev_close;
 	}
@@ -514,6 +527,8 @@ static unsigned long addr_bdev_mark_dead;
 static notrace __attribute__((optimize("no-optimize-sibling-calls")))
 void bdev_mark_dead_handler(struct block_device *bdev, bool surprise)
 {
+	pr_debug("Mark device '%d:%d' dead\n",
+		MAJOR(bdev->bd_dev), MINOR(bdev->bd_dev));
 	__blkfilter_detach(bdev->bd_dev, NULL, 0);
 	/*
 	 * bdev_mark_dead(bdev, surprise);
@@ -590,6 +605,7 @@ static inline void __blkfilter_detach_disk(struct gendisk *disk)
 static notrace __attribute__((optimize("no-optimize-sibling-calls")))
 void del_gendisk_handler(struct gendisk *disk)
 {
+	pr_debug("Mark disk '%s' dead\n", disk->disk_name);
 	__blkfilter_detach_disk(disk);
 	del_gendisk(disk);
 }
@@ -640,6 +656,8 @@ int bdev_disk_changed_handler(struct gendisk *disk, bool invalidate)
 #endif
 	if (disk->open_partitions)
 		goto out;
+
+	pr_debug("Mark disk '%s' changed\n", disk->disk_name);
 	__blkfilter_detach_disk(disk);
 out:
 	return bdev_disk_changed(disk, invalidate);
@@ -655,6 +673,8 @@ int bdev_disk_changed_handler(struct block_device *bdev, bool invalidate)
 	if (bdev->bd_part_count)
 		goto out;
 
+	pr_debug("Mark block device '%d:%d' changed\n",
+		MAJOR(bdev->bd_dev), MINOR(bdev->bd_dev));
 	__blkfilter_detach_disk(disk);
 out:
 	return bdev_disk_changed(bdev, invalidate);
