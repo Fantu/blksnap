@@ -18,7 +18,7 @@
 #include "bdevfilter-internal.h"
 #include "compat.h"
 #include "version.h"
-
+#include "log.h"
 
 struct bdev_extension {
 	struct list_head link;
@@ -808,6 +808,17 @@ static void bdevfilter_unset(struct ftrace_ops *ops)
 static int __init bdevfilter_init(void)
 {
 	int ret;
+
+	log_init();
+	//ret = log_restart(7, "/var/log/veeam/bdevfilter.log", 0);
+	ret = log_restart(-1, NULL, 0);
+	if (ret) {
+		pr_err("Failed to prepare logging\n");
+		return ret;
+	}
+
+	pr_debug("Loading\n");
+	pr_debug("Version: %s\n", VERSION_STR);
 
 	ret = prepare_fn();
 	if (ret) {
