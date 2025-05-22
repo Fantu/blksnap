@@ -117,20 +117,20 @@ static inline off_t randomChunk(const int chunkSize, const off_t downLimit, cons
     }
 }
 
-static inline std::string GetVersion()
+static inline int randomInt(const int upLimit, const int order)
+{
+    return (std::rand() % upLimit) & ~(order - 1);
+}
+
+static inline std::string GetBlksnapVersion()
 {
     unsigned short major, minor, revision, build;
 
     blksnap::CService().Version(major, minor, revision, build);
-    return std::string(std::to_string(major)+"."+
-                       std::to_string(minor)+"."+
-                       std::to_string(revision)+"."+
-                       std::to_string(build));
-}
-
-static inline int randomInt(const int upLimit, const int order)
-{
-    return (std::rand() % upLimit) & ~(order - 1);
+    return std::to_string(major) + "." +
+           std::to_string(minor) + "." +
+           std::to_string(revision) + "." +
+           std::to_string(build);
 }
 
 void CheckBoundary(const std::string& origDevName, const std::string& diffStorage,
@@ -140,7 +140,7 @@ void CheckBoundary(const std::string& origDevName, const std::string& diffStorag
     std::srand(std::time(nullptr));
 
     logger.Info("--- Test: boundary conditions ---");
-    logger.Info("version: " + GetVersion());
+    logger.Info("version: " + GetBlksnapVersion());
     logger.Info("device: " + origDevName);
     logger.Info("diffStorage: " + diffStorage);
     logger.Info("diffStorageLimit: " + std::to_string(diffStorageLimit));
