@@ -388,7 +388,7 @@ void CheckCorruption(const std::string& origDevName,
         auto ptrCbt = blksnap::ICbt::Create(origDevName);
 
         { // get CBT information
-            char generationIdStr[64];
+            char generationIdStr[64] = {0};
             auto ptrCbtInfo = ptrCbt->GetCbtInfo();
 
             if (ptrCbtInfoPrevious)

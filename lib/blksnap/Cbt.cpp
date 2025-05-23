@@ -36,7 +36,7 @@ public:
 
     std::string GetImage() override
     {
-        struct blksnap_snapshotinfo snapshotinfo;
+        struct blksnap_snapshotinfo snapshotinfo = {0};
 
         m_ctl.SnapshotInfo(snapshotinfo);
 
@@ -49,7 +49,7 @@ public:
 
     int GetError() override
     {
-        struct blksnap_snapshotinfo snapshotinfo;
+        struct blksnap_snapshotinfo snapshotinfo = {0};
 
         m_ctl.SnapshotInfo(snapshotinfo);
         return snapshotinfo.error_code;
@@ -57,7 +57,7 @@ public:
 
     std::shared_ptr<SCbtInfo> GetCbtInfo() override
     {
-        struct blksnap_cbtinfo cbtInfo;
+        struct blksnap_cbtinfo cbtInfo = {0};
 
         m_ctl.CbtInfo(cbtInfo);
 
@@ -71,7 +71,7 @@ public:
 
     std::shared_ptr<SCbtData> GetCbtData() override
     {
-        struct blksnap_cbtinfo cbtInfo;
+        struct blksnap_cbtinfo cbtInfo = {0};
         m_ctl.CbtInfo(cbtInfo);
 
         auto ptrCbtMap = std::make_shared<SCbtData>(cbtInfo.block_count);

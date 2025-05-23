@@ -11,9 +11,9 @@ struct STestHeader
     int seqNumber;
     blksnap::sector_t sector;
     clock_t seqTime;
-
-    void Init(int inSeqNumber, blksnap::sector_t inSector, const clock_t inSeqTime);
 };
+
+void STestHeader_Init(struct STestHeader& testHeader, int inSeqNumber, blksnap::sector_t inSector, const clock_t inSeqTime);
 
 struct STestSector
 {

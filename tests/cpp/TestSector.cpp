@@ -10,13 +10,13 @@ using blksnap::SRange;
 
 const char* testHeadMagic = "testhead";
 
-void STestHeader::Init(const int inSeqNumber, const sector_t inSector, const clock_t inSeqTime)
+void STestHeader_Init(struct STestHeader* pTestHeader, const int inSeqNumber, const sector_t inSector, const clock_t inSeqTime)
 {
-    memcpy(head, testHeadMagic, 8);
-    crc = 0xDEC032CC;
-    seqNumber = inSeqNumber;
-    sector = inSector;
-    seqTime = inSeqTime;
+    memcpy(pTestHeader->head, testHeadMagic, 8);
+    pTestHeader->crc = 0xDEC032CC;
+    pTestHeader->seqNumber = inSeqNumber;
+    pTestHeader->sector = inSector;
+    pTestHeader->seqTime = inSeqTime;
 };
 
 void CTestSectorGenetor::Generate(unsigned char* buffer, size_t size, sector_t sector, const clock_t seqTime)
@@ -25,7 +25,7 @@ void CTestSectorGenetor::Generate(unsigned char* buffer, size_t size, sector_t s
     {
         STestSector* t = (STestSector*)(buffer + offset);
 
-        t->header.Init(m_seqNumber, sector, seqTime);
+        STestHeader_Init(&t->header, m_seqNumber, sector, seqTime);
 
         CRandomHelper::GenerateBuffer(t->body, sizeof(t->body));
 
