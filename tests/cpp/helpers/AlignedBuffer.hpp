@@ -12,7 +12,7 @@ public:
         Allocate();
     };
     AlignedBuffer(size_t alignment, size_t size)
-        : m_alignment(size)
+        : m_alignment(alignment)
         , m_size(size)
     {
         Allocate();
@@ -56,5 +56,9 @@ private:
     void Allocate()
     {
         m_buf = ::aligned_alloc(m_alignment, m_size * sizeof(T));
+        if (!m_buf)
+            throw std::system_error(errno, std::generic_category(),
+                "Cannot allocate " + std::to_string(m_size * sizeof(T)) + " bytes");
+        memset(m_buf, 0, m_size * sizeof(T));
     };
 };
