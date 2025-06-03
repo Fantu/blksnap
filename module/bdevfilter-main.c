@@ -899,6 +899,7 @@ static void __exit bdevfilter_done(void)
 	bdevfilter_unset(&ops_submit_bio_noacct);
 
 	bdevfilter_detach_all(NULL);
+	log_done();
 }
 
 module_init(bdevfilter_init);
