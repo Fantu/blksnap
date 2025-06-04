@@ -158,12 +158,12 @@ static int __blkfilter_detach(dev_t dev_id, char *name, size_t name_length)
 	spin_unlock(&bdev_extension_list_lock);
 
 	if (ret) {
-		pr_err("Cannot detach filter from block device '%d:%d'\n",
+		pr_debug("Cannot detach filter from block device '%d:%d'\n",
 			MAJOR(dev_id), MINOR(dev_id));
 		if (ret == -ENOENT)
-			pr_err("Filter not found\n");
+			pr_debug("Filter not found\n");
 		else if (ret == -EINVAL)
-			pr_err("Invalid filters name\n");
+			pr_debug("Invalid filters name\n");
 	} else
 		pr_debug("Filter detached\n");
 
@@ -240,7 +240,7 @@ static int ioctl_ctl(struct bdevfilter_ctl __user *argp)
 	spin_unlock(&bdev_extension_list_lock);
 
 	if (!flt) {
-		pr_err("Filter for the block device '%d:%d' not found\n",
+		pr_debug("Filter for the block device '%d:%d' not found\n",
 			MAJOR(bdev->bd_dev), MINOR(bdev->bd_dev));
 		ret = -ENOENT;
 		goto out_bdev_close;
@@ -394,6 +394,8 @@ static long unlocked_ioctl(struct file *filp, unsigned int cmd,
 		return ioctl_detach(argp);
 	case BDEVFILTER_CTL:
 		return ioctl_ctl(argp);
+	case BDEVFILTER_SETLOG:
+		return ioctl_setlog(argp);
 	default:
 		return -ENOTTY;
 	}
