@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 /* Copyright (C) 2023 Veeam Software Group GmbH */
 #ifndef _UAPI_LINUX_BDEVFILTER_H
 #define _UAPI_LINUX_BDEVFILTER_H
