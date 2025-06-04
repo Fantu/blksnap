@@ -75,77 +75,6 @@ static struct ftrace_ops ops_del_gendisk = {
 		FTRACE_OPS_FL_PERMANENT,
 };
 
-/*
- * ftrace for the bdev_disk_changed())
- */
-
-#if defined(HAVE_BDEV_DISK_CHANGED_DISK)
-static notrace __attribute__((optimize("no-optimize-sibling-calls")))
-int bdev_disk_changed_handler(struct gendisk *disk, bool invalidate)
-{
-#ifdef GENHD_FL_UP
-	if (!(disk->flags & GENHD_FL_UP))
-		goto out;
-#else
-	if (!disk_live(disk))
-		goto out;
-#endif
-	if (disk->open_partitions)
-		goto out;
-
-	pr_debug("Mark disk '%s' changed\n", disk->disk_name);
-	__blkfilter_detach_disk(disk);
-out:
-	return bdev_disk_changed(disk, invalidate);
-}
-#elif defined(HAVE_BDEV_DISK_CHANGED_BDEV)
-static notrace __attribute__((optimize("no-optimize-sibling-calls")))
-int bdev_disk_changed_handler(struct block_device *bdev, bool invalidate)
-{
-	struct gendisk *disk = bdev->bd_disk;
-
-	if (!(disk->flags & GENHD_FL_UP))
-		goto out;
-	if (bdev->bd_part_count)
-		goto out;
-
-	pr_debug("Mark block device '%d:%d' changed\n",
-		MAJOR(bdev->bd_dev), MINOR(bdev->bd_dev));
-	__blkfilter_detach_disk(disk);
-out:
-	return bdev_disk_changed(bdev, invalidate);
-}
-#endif
-
-static notrace void ftrace_handler_bdev_disk_changed(
-	unsigned long ip, unsigned long parent_ip, struct ftrace_ops *fops,
-#ifdef HAVE_FTRACE_REGS
-	struct ftrace_regs *fregs
-#else
-	struct pt_regs *regs
-#endif
-	)
-{
-	if (within_module(parent_ip, THIS_MODULE))
-		return;
-
-#if defined(HAVE_FTRACE_REGS_SET_INSTRUCTION_POINTER)
-	ftrace_regs_set_instruction_pointer(fregs, (unsigned long)bdev_disk_changed_handler);
-#elif defined(HAVE_FTRACE_REGS)
-	ftrace_instruction_pointer_set(fregs, (unsigned long)bdev_disk_changed_handler);
-#else
-	instruction_pointer_set(regs, (unsigned long)bdev_disk_changed_handler);
-#endif
-}
-
-static struct ftrace_ops ops_bdev_disk_changed = {
-	.func = ftrace_handler_bdev_disk_changed,
-	.flags = FTRACE_OPS_FL_DYNAMIC |
-		FTRACE_OPS_FL_SAVE_REGS |
-		FTRACE_OPS_FL_IPMODIFY |
-		FTRACE_OPS_FL_PERMANENT,
-};
-
 static inline int prepare_functions(unsigned long kernel_base)
 {
 	(void)(kernel_base);
@@ -153,20 +82,10 @@ static inline int prepare_functions(unsigned long kernel_base)
 }
 static inline int set_functions(void)
 {
-	int ret;
-
-	ret = bdevfilter_set(&ops_del_gendisk, "del_gendisk");
-	if (ret)
-		return ret;
-	ret = bdevfilter_set(&ops_bdev_disk_changed, "bdev_disk_changed");
-	if (ret)
-		bdevfilter_unset(&ops_del_gendisk);
-	return ret;
-
+	return bdevfilter_set(&ops_del_gendisk, "del_gendisk");;
 }
 
 static inline void unset_functions(void)
 {
-	bdevfilter_unset(&ops_bdev_disk_changed);
 	bdevfilter_unset(&ops_del_gendisk);
 }

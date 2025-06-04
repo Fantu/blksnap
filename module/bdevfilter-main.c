@@ -24,7 +24,7 @@
 #include "bdevfilter-submit_bio.h"
 #ifdef HAVE_BDEV_MARK_DEAD
 #include "bdevfilter-bdev_mark_dead.h"
-#else
+#elif defined(HAVE_DEL_GENDISK)
 #include "bdevfilter-del_gendisk.h"
 #endif
 

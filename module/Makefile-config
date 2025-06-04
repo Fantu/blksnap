@@ -28,29 +28,19 @@ ccflags-y += $(shell test -f $(srctree)/include/linux/blkdev.h &&		\
 # [5.18 : 6.5]
 # include/linux/blkdev.h
 # void del_gendisk(struct gendisk *gp);
-# int bdev_disk_changed(struct gendisk *disk, bool invalidate)
 #
 ccflags-y += $(shell test -f $(srctree)/include/linux/blkdev.h &&		\
-	grep -w "int bdev_disk_changed" $(srctree)/include/linux/blkdev.h | grep -qw "struct gendisk" && \
-		echo -D HAVE_BDEV_DISK_CHANGED_DISK)
+	grep -qw "void del_gendisk" $(srctree)/include/linux/blkdev.h && \
+		echo -D HAVE_DEL_GENDISK)
 #
-# [5.14 : 5.17]
+# [5.10 : 5.17]
 # include/linux/genhd.h
 # void del_gendisk(struct gendisk *gp);
-# int bdev_disk_changed(struct gendisk *disk, bool invalidate)
 #
 ccflags-y += $(shell test -f $(srctree)/include/linux/genhd.h &&		\
-	grep -w "int bdev_disk_changed" $(srctree)/include/linux/genhd.h | grep -qw "struct gendisk" && \
-		echo -D HAVE_BDEV_DISK_CHANGED_DISK)
-#
-# [5.10 : 5.13]
-# include/linux/genhd.h
-# void del_gendisk(struct gendisk *gp);
-# int bdev_disk_changed(struct block_device *bdev, bool invalidate)
-#
-ccflags-y += $(shell test -f $(srctree)/include/linux/genhd.h &&		\
-	grep -w "int bdev_disk_changed" $(srctree)/include/linux/genhd.h | grep -qw "struct block_device" && \
-		echo -D HAVE_BDEV_DISK_CHANGED_BDEV)
+	grep -qw "void del_gendisk" $(srctree)/include/linux/genhd.h && \
+		echo -D HAVE_DEL_GENDISK)
+
 #
 # [5.10 : 5.12]
 # include/linux/genhd.h
