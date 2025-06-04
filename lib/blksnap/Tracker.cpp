@@ -79,6 +79,28 @@ void CTracker::Detach()
 
 }
 
+bool CTracker::SetLog(const int tz_minuteswest, const int level, const std::string& filepath)
+{
+    struct bdevfilter_setlog param = { 0 };
+
+    param.tz_minuteswest = tz_minuteswest;
+    param.level = level;
+    if ((level > 0) && !filepath.empty())
+    {
+        param.filepath_size = filepath.size();
+        param.filepath = (__u64)filepath.c_str();
+    }
+
+    if (!::ioctl(m_bdevfilter, BDEVFILTER_SETLOG, &param))
+        return true;
+
+    if (errno == EALREADY)
+        return false;
+
+    throw std::system_error(errno, std::generic_category(),
+        "Failed to set filter log");
+}
+
 void CTracker::CbtInfo(struct blksnap_cbtinfo& cbtInfo)
 {
     struct bdevfilter_ctl ctl = {

@@ -179,6 +179,28 @@ namespace
 
             return ctl.optlen;
         };
+
+        static bool SetLog(const int tz_minuteswest, const int level, const std::string& filepath)
+        {
+            struct bdevfilter_setlog param = { 0 };
+
+            param.tz_minuteswest = tz_minuteswest;
+            param.level = level;
+            if ((level > 0) && !filepath.empty())
+            {
+                param.filepath_size = filepath.size();
+                param.filepath = (__u64)filepath.c_str();
+            }
+
+            if (!::ioctl(m_bdevfilter, BDEVFILTER_SETLOG, &param))
+                return true;
+
+            if (errno == EALREADY)
+                return false;
+
+            throw std::system_error(errno, std::generic_category(),
+                "Failed to set filter log");
+        }
     private:
         std::string m_devicePath;
         int m_bdevfilter;
@@ -1283,6 +1305,49 @@ public:
     };
 };
 
+class SetFilterLogArgsProc : public IArgsProc
+{
+public:
+    SetFilterLogArgsProc()
+        : IArgsProc()
+    {
+        m_usage = std::string("Set filter log.");
+        m_desc.add_options()
+            ("filepath,f", po::value<std::string>(), "Log file path.")
+            ("level,l", po::value<std::string>(), "Log level from 0 to 7.")
+            ("disable", "Disable logging.");
+    };
+
+    void Execute(po::variables_map& vm) override
+    {
+
+        int tz_minuteswest;
+        int level;
+        std::string filepath;
+
+        if (vm.count("disable"))
+        {
+            level = -1;
+            filepath = "";
+        }
+        else
+        {
+            if (vm.count("filepath"))
+                filepath = vm["filepath"].as<std::string>();
+
+            if (vm.count("level"))
+            {
+                level = std::stoi(vm["level"].as<std::string>());
+                level = level <= LOGLEVEL_DEBUG ? level : LOGLEVEL_DEBUG;
+            }
+            else
+                level = -1;
+        }
+
+        CBlkFilterCtl::SetLog(tz_minuteswest, level, filepath)
+    };
+};
+
 static std::map<std::string, std::shared_ptr<IArgsProc>> argsProcMap{
   {"version", std::make_shared<VersionArgsProc>()},
   {"attach", std::make_shared<AttachArgsProc>()},
@@ -1300,6 +1365,7 @@ static std::map<std::string, std::shared_ptr<IArgsProc>> argsProcMap{
   {"snapshot_watcher", std::make_shared<SnapshotWatcherArgsProc>()},
   {"mod", std::make_shared<ModArgsProc>()},
   {"setlog", std::make_shared<SetlogArgsProc>()},
+  {"setfilterlog", std::make_shared<SetFilterLogArgsProc>()},
 };
 
 static void printUsage()

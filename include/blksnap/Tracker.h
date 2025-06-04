@@ -43,6 +43,7 @@ namespace blksnap
 
         bool Attach();
         void Detach();
+        bool SetLog(const int tz_minuteswest, const int level, const std::string& filepath);
 
         void CbtInfo(struct blksnap_cbtinfo& cbtInfo);
         void ReadCbtMap(unsigned int offset, unsigned int length, uint8_t* buff);
