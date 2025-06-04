@@ -76,8 +76,7 @@ static int ioctl_attach(struct bdevfilter_attach __user *argp)
 	INIT_LIST_HEAD(&ext_new->link);
 	ext_new->dev_id = bdev->bd_dev;
 	bdev_mutex_lock(bdev);
-	if (!device_alive(bdev))
-	{
+	if (!device_alive(bdev)){
 		pr_debug("Device is not alive\n");
 		ret = -ENODEV;
 		goto out_mutex_unlock;
@@ -136,7 +135,7 @@ out_free_devpath:
 	return ret;
 }
 
-static inline int __blkfilter_detach(dev_t dev_id, char *name, size_t name_length)
+static int __blkfilter_detach(dev_t dev_id, char *name, size_t name_length)
 {
 	int ret = 0;
 	struct bdev_extension *ext = NULL;
@@ -310,7 +309,6 @@ int bdevfilter_register(struct bdevfilter_operations *fops)
 	else
 		pr_debug("The block device filter '%s' registered\n",
 			fops->name);
-
 	return ret;
 }
 EXPORT_SYMBOL_GPL(bdevfilter_register);
@@ -324,7 +322,7 @@ void bdevfilter_unregister(struct bdevfilter_operations *fops)
 }
 EXPORT_SYMBOL_GPL(bdevfilter_unregister);
 
-static inline bool bdev_filters_apply(struct bio *bio)
+static bool bdev_filters_apply(struct bio *bio)
 {
 	bool skip = false;
 	struct bdev_extension *ext;
@@ -342,7 +340,6 @@ static inline bool bdev_filters_apply(struct bio *bio)
 		bdevfilter_exit(flt);
 		bdevfilter_put(flt);
 	}
-
 	return skip;
 }
 
@@ -385,33 +382,29 @@ static int get_symbol(const char *name, void **paddr)
 		pr_err("Failed to get address of the '%s'\n", name);
 		return ret;
 	}
-
 	*paddr = kp.addr;
 	unregister_kprobe(&kp);
-
 	return 0;
 }
 
 static int prepare_fn(void )
 {
 	int ret;
-
 	unsigned long kernel_base;
 	void *addr;
 
 	ret = get_symbol("get_option", &addr);
-	if (ret)
+	if (ret) {
+		pr_err("Failed to get address of the '%s'\n", "get_option");
 		return ret;
+	}
 	kernel_base = (unsigned long)(get_option) - (unsigned long)addr;
+	pr_debug("Function '%s' has been found\n", "get_option");
 
 	ret = prepare_ftrace_free_filter(kernel_base);
 	if (ret)
 		return ret;
-	ret = prepare_functions(kernel_base);
-	if (ret)
-		return ret;
-
-	return 0;
+	return prepare_functions(kernel_base);
 }
 
 static int bdevfilter_set(struct ftrace_ops *ops, unsigned char *name)
@@ -452,7 +445,6 @@ static int __init bdevfilter_init(void)
 		pr_err("Failed to prepare logging\n");
 		return ret;
 	}
-
 	pr_debug("Loading\n");
 	pr_debug("Version: %s\n", VERSION_STR);
 
@@ -485,10 +477,8 @@ out_unset_submit_bio_noacct:
 static void __exit bdevfilter_done(void)
 {
 	misc_deregister(&bdevfilter_misc);
-
 	unset_functions();
 	unset_submit_bio();
-
 	bdevfilter_detach_all(NULL);
 	log_done();
 }
