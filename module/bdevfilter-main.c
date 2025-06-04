@@ -21,6 +21,7 @@
 #include "log.h"
 
 #include "bdevfilter-fops.h"
+#include "bdevfilter-submit_bio.h"
 
 static void freeze_ref_release(struct percpu_ref *freeze_ref)
 {
@@ -340,79 +341,6 @@ static inline bool bdev_filters_apply(struct bio *bio)
 	return skip;
 }
 
-/**
- * submit_bio_noacct_notrace() - Execute submit_bio_noacct() without handling.
- */
-notrace __attribute__((optimize("no-optimize-sibling-calls")))
-#if defined(HAVE_QC_SUBMIT_BIO_NOACCT)
-blk_qc_t submit_bio_noacct_notrace(struct bio *bio)
-#elif defined(HAVE_VOID_SUBMIT_BIO_NOACCT)
-void submit_bio_noacct_notrace(struct bio *bio)
-#else
-#error "Your kernel is too old for this module."
-#endif
-{
-#if defined(HAVE_QC_SUBMIT_BIO_NOACCT)
-	return submit_bio_noacct(bio);
-#elif defined(HAVE_VOID_SUBMIT_BIO_NOACCT)
-	submit_bio_noacct(bio);
-#endif
-}
-EXPORT_SYMBOL_GPL(submit_bio_noacct_notrace);
-
-/*
- * ftrace for submit_bio_noacct()
- */
-static notrace __attribute__((optimize("no-optimize-sibling-calls")))
-#if defined(HAVE_QC_SUBMIT_BIO_NOACCT)
-blk_qc_t submit_bio_noacct_handler(struct bio *bio)
-#elif defined(HAVE_VOID_SUBMIT_BIO_NOACCT)
-void submit_bio_noacct_handler(struct bio *bio)
-#endif
-{
-	if (bdev_filters_apply(bio)) {
-#if defined(HAVE_QC_SUBMIT_BIO_NOACCT)
-		return BLK_QC_T_NONE;
-#elif defined(HAVE_VOID_SUBMIT_BIO_NOACCT)
-		return;
-#endif
-	}
-
-#if defined(HAVE_QC_SUBMIT_BIO_NOACCT)
-	return submit_bio_noacct(bio);
-#elif defined(HAVE_VOID_SUBMIT_BIO_NOACCT)
-	submit_bio_noacct(bio);
-#endif
-}
-
-static notrace void ftrace_handler_submit_bio_noacct(
-	unsigned long ip, unsigned long parent_ip, struct ftrace_ops *fops,
-#ifdef HAVE_FTRACE_REGS
-	struct ftrace_regs *fregs
-#else
-	struct pt_regs *regs
-#endif
-	)
-{
-	if (current->bio_list || within_module(parent_ip, THIS_MODULE))
-		return;
-
-#if defined(HAVE_FTRACE_REGS_SET_INSTRUCTION_POINTER)
-	ftrace_regs_set_instruction_pointer(fregs, (unsigned long)submit_bio_noacct_handler);
-#elif defined(HAVE_FTRACE_REGS)
-	ftrace_instruction_pointer_set(fregs, (unsigned long)submit_bio_noacct_handler);
-#else
-	instruction_pointer_set(regs, (unsigned long)submit_bio_noacct_handler);
-#endif
-}
-
-static struct ftrace_ops ops_submit_bio_noacct = {
-	.func = ftrace_handler_submit_bio_noacct,
-	.flags = FTRACE_OPS_FL_DYNAMIC |
-		FTRACE_OPS_FL_SAVE_REGS |
-		FTRACE_OPS_FL_IPMODIFY |
-		FTRACE_OPS_FL_PERMANENT,
-};
 
 #ifdef HAVE_BDEV_MARK_DEAD
 static unsigned long addr_bdev_mark_dead;
@@ -727,7 +655,7 @@ static int __init bdevfilter_init(void)
 		return ret;
 	}
 
-	ret = bdevfilter_set(&ops_submit_bio_noacct, "submit_bio_noacct");
+	ret = set_submit_bio();
 	if (ret)
 		return ret;
 
@@ -763,7 +691,7 @@ out_unset_del_gendisk:
 	bdevfilter_unset(&ops_del_gendisk);
 #endif
 out_unset_submit_bio_noacct:
-	bdevfilter_unset(&ops_submit_bio_noacct);
+	unset_submit_bio();
 
 	return ret;
 }
@@ -777,7 +705,7 @@ static void __exit bdevfilter_done(void)
 	bdevfilter_unset(&ops_bdev_disk_changed);
 	bdevfilter_unset(&ops_del_gendisk);
 #endif
-	bdevfilter_unset(&ops_submit_bio_noacct);
+	unset_submit_bio();
 
 	bdevfilter_detach_all(NULL);
 	log_done();
