@@ -20,59 +20,7 @@
 #include "version.h"
 #include "log.h"
 
-struct bdev_extension {
-	struct list_head link;
-	dev_t dev_id;
-	struct blkfilter *flt;
-};
-
-/* The list of extensions for this block device */
-static LIST_HEAD(bdev_extension_list);
-
-/* Lock the queue of block device to add or delete extension. */
-static DEFINE_SPINLOCK(bdev_extension_list_lock);
-
-static inline struct bdev_extension *bdev_extension_find(dev_t dev_id)
-{
-	struct bdev_extension *ext;
-
-	if (list_empty(&bdev_extension_list))
-		return NULL;
-
-	list_for_each_entry (ext, &bdev_extension_list, link)
-		if (dev_id == ext->dev_id)
-			return ext;
-
-	return NULL;
-}
-
-
-static LIST_HEAD(bdevfilters);
-static DEFINE_SPINLOCK(bdevfilters_lock);
-
-static inline struct bdevfilter_operations *__bdevfilter_operations_find(
-							const char *name)
-{
-	struct bdevfilter_operations *fops;
-
-	list_for_each_entry(fops, &bdevfilters, link)
-		if (strncmp(fops->name, name, BDEVFILTER_NAME_LENGTH) == 0)
-			return fops;
-
-	return NULL;
-}
-
-static inline struct bdevfilter_operations *bdevfilter_operations_find(
-							 const char *name)
-{
-	struct bdevfilter_operations *fops;
-
-	spin_lock(&bdevfilters_lock);
-	fops = __bdevfilter_operations_find(name);
-	spin_unlock(&bdevfilters_lock);
-
-	return fops;
-}
+#include "bdevfilter-fops.h"
 
 static void freeze_ref_release(struct percpu_ref *freeze_ref)
 {
@@ -121,16 +69,8 @@ static int ioctl_attach(struct bdevfilter_attach __user *argp)
 
 	INIT_LIST_HEAD(&ext_new->link);
 	ext_new->dev_id = bdev->bd_dev;
-#ifdef HAVE_GENDISK_OPEN_MUTEX
-	mutex_lock(&bdev->bd_disk->open_mutex);
-#else
-	mutex_lock(&bdev->bd_mutex);
-#endif
-#ifdef HAVE_DISK_LIVE
-	if (!disk_live(bdev->bd_disk))
-#else
-	if (inode_unhashed(BD_INODE(bdev)))
-#endif
+	bdev_mutex_lock(bdev);
+	if (!device_alive(bdev))
 	{
 		pr_debug("Device is not alive\n");
 		ret = -ENODEV;
@@ -181,11 +121,7 @@ out_unfreeze:
 	memalloc_noio_restore(task_flags);
 
 out_mutex_unlock:
-#ifdef HAVE_GENDISK_OPEN_MUTEX
-	mutex_unlock(&bdev->bd_disk->open_mutex);
-#else
-	mutex_unlock(&bdev->bd_mutex);
-#endif
+	bdev_mutex_unlock(bdev);
 	kfree(ext_new);
 out_blkdev_put:
 	bdev_close(bdev_holder);
@@ -224,7 +160,7 @@ static inline int __blkfilter_detach(dev_t dev_id, char *name, size_t name_lengt
 		else if (ret == -EINVAL)
 			pr_err("Invalid filters name\n");
 	} else
-		pr_debug("Filter detached\n")
+		pr_debug("Filter detached\n");
 
 	kfree(ext);
 	bdevfilter_put(flt);
@@ -254,22 +190,10 @@ static int ioctl_detach(struct bdevfilter_name __user *argp)
 		goto out_free_devpath;
 	}
 
-#ifdef HAVE_GENDISK_OPEN_MUTEX
-	mutex_lock(&bdev->bd_disk->open_mutex);
-#else
-	mutex_lock(&bdev->bd_mutex);
-#endif
-#ifdef HAVE_DISK_LIVE
-	if (!disk_live(bdev->bd_disk))
-#else
-	if (inode_unhashed(BD_INODE(bdev)))
-#endif
+	bdev_mutex_lock(bdev);
+	if (!device_alive(bdev))
 		ret = -ENODEV;
-#ifdef HAVE_GENDISK_OPEN_MUTEX
-	mutex_unlock(&bdev->bd_disk->open_mutex);
-#else
-	mutex_unlock(&bdev->bd_mutex);
-#endif
+	bdev_mutex_unlock(bdev);
 	if (!ret)
 		ret = __blkfilter_detach(bdev->bd_dev, karg.name, BDEVFILTER_NAME_LENGTH);
 
@@ -394,40 +318,12 @@ void bdevfilter_unregister(struct bdevfilter_operations *fops)
 }
 EXPORT_SYMBOL_GPL(bdevfilter_unregister);
 
-#if defined(HAVE_BI_BDISK)
-static inline struct hd_struct *bdevfilter_disk_get_part(struct gendisk *disk, int partno)
-{
-	struct disk_part_tbl *ptbl = rcu_dereference(disk->part_tbl);
-
-	if (unlikely(partno < 0 || partno >= ptbl->len))
-		return NULL;
-	return rcu_dereference(ptbl->part[partno]);
-}
-static inline dev_t bdevfilter_disk_get_dev(struct gendisk *disk, int partno)
-{
-	dev_t dev_id = 0;
-	struct hd_struct *part;
-
-	rcu_read_lock();
-	part = bdevfilter_disk_get_part(disk, partno);
-	if (part)
-		dev_id = part_devt(part);
-	rcu_read_unlock();
-
-	return dev_id;
-}
-#endif
-
 static inline bool bdev_filters_apply(struct bio *bio)
 {
 	bool skip = false;
 	struct bdev_extension *ext;
 	struct blkfilter *flt = NULL;
-#if defined(HAVE_BI_BDISK)
-	dev_t dev_id = bdevfilter_disk_get_dev(bio->bi_disk, bio->bi_partno);
-#else
-	dev_t dev_id = bio->bi_bdev->bd_dev;
-#endif
+	dev_t dev_id = bdevfilter_dev_id_by_bio(bio);
 
 	spin_lock(&bdev_extension_list_lock);
 	ext = bdev_extension_find(dev_id);
@@ -740,10 +636,6 @@ static struct miscdevice bdevfilter_misc = {
 	.fops		= &bdevfilter_fops,
 };
 
-#ifdef HAVE_NOT_FTRACE_FREE_FILTER
-static unsigned long addr_ftrace_free_filter;
-#endif
-
 static int get_symbol(const char *name, void **paddr)
 {
 	int ret;
@@ -774,12 +666,9 @@ static int prepare_fn(void )
 		return ret;
 	kernel_base = (unsigned long)(get_option) - (unsigned long)addr;
 
-#ifdef HAVE_NOT_FTRACE_FREE_FILTER
-	ret = get_symbol("ftrace_free_filter", &addr);
+	ret = prepare_ftrace_free_filter(kernel_base);
 	if (ret)
 		return ret;
-	addr_ftrace_free_filter = kernel_base + (unsigned long)addr;
-#endif
 
 #ifdef HAVE_BDEV_MARK_DEAD
 	ret = get_symbol("bdev_mark_dead", &addr);
@@ -803,11 +692,7 @@ static int bdevfilter_set(struct ftrace_ops *ops, unsigned char *name)
 	ret = register_ftrace_function(ops);
 	if (ret) {
 		pr_err("Failed to register ftrace handler (%d)\n", ret);
-#ifdef HAVE_NOT_FTRACE_FREE_FILTER
-		((void (*)(struct ftrace_ops *ops))addr_ftrace_free_filter)(ops);
-#else
-		ftrace_free_filter(ops);
-#endif
+		bdevfilter_ftrace_free_filter(ops);
 		return ret;
 	}
 
@@ -818,11 +703,7 @@ static int bdevfilter_set(struct ftrace_ops *ops, unsigned char *name)
 static void bdevfilter_unset(struct ftrace_ops *ops)
 {
 	unregister_ftrace_function(ops);
-#ifdef HAVE_NOT_FTRACE_FREE_FILTER
-	((void (*)(struct ftrace_ops *ops))addr_ftrace_free_filter)(ops);
-#else
-	ftrace_free_filter(ops);
-#endif
+	bdevfilter_ftrace_free_filter(ops);
 }
 
 static int __init bdevfilter_init(void)
