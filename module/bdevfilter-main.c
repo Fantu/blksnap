@@ -22,6 +22,10 @@
 
 #include "bdevfilter-fops.h"
 #include "bdevfilter-submit_bio.h"
+#ifdef HAVE_BDEV_MARK_DEAD
+#include "bdevfilter-bdev_mark_dead.h"
+#endif
+
 
 static void freeze_ref_release(struct percpu_ref *freeze_ref)
 {
@@ -343,52 +347,6 @@ static inline bool bdev_filters_apply(struct bio *bio)
 
 
 #ifdef HAVE_BDEV_MARK_DEAD
-static unsigned long addr_bdev_mark_dead;
-
-/*
- * ftrace for bdev_mark_dead()
- */
-static notrace __attribute__((optimize("no-optimize-sibling-calls")))
-void bdev_mark_dead_handler(struct block_device *bdev, bool surprise)
-{
-	pr_debug("Mark device '%d:%d' dead\n",
-		MAJOR(bdev->bd_dev), MINOR(bdev->bd_dev));
-	__blkfilter_detach(bdev->bd_dev, NULL, 0);
-	/*
-	 * bdev_mark_dead(bdev, surprise);
-	 * On some systems, this function may not be exported.
-	 */
-	((void (*)(struct block_device *bdev, bool surprise))addr_bdev_mark_dead)(bdev, surprise);
-}
-
-static notrace void ftrace_handler_bdev_mark_dead(
-	unsigned long ip, unsigned long parent_ip, struct ftrace_ops *fops,
-#ifdef HAVE_FTRACE_REGS
-	struct ftrace_regs *fregs
-#else
-	struct pt_regs *regs
-#endif
-	)
-{
-	if (within_module(parent_ip, THIS_MODULE))
-		return;
-
-#if defined(HAVE_FTRACE_REGS_SET_INSTRUCTION_POINTER)
-	ftrace_regs_set_instruction_pointer(fregs, (unsigned long)bdev_mark_dead_handler);
-#elif defined(HAVE_FTRACE_REGS)
-	ftrace_instruction_pointer_set(fregs, (unsigned long)bdev_mark_dead_handler);
-#else
-	instruction_pointer_set(regs, (unsigned long)bdev_mark_dead_handler);
-#endif
-}
-
-static struct ftrace_ops ops_bdev_mark_dead = {
-	.func = ftrace_handler_bdev_mark_dead,
-	.flags = FTRACE_OPS_FL_DYNAMIC |
-		FTRACE_OPS_FL_SAVE_REGS |
-		FTRACE_OPS_FL_IPMODIFY |
-		FTRACE_OPS_FL_PERMANENT,
-};
 
 #else
 
@@ -597,12 +555,10 @@ static int prepare_fn(void )
 	ret = prepare_ftrace_free_filter(kernel_base);
 	if (ret)
 		return ret;
-
 #ifdef HAVE_BDEV_MARK_DEAD
-	ret = get_symbol("bdev_mark_dead", &addr);
+	ret = prepare_functions(kernel_base);
 	if (ret)
 		return ret;
-	addr_bdev_mark_dead = kernel_base + (unsigned long)addr;
 #endif
 	return 0;
 }
@@ -660,7 +616,7 @@ static int __init bdevfilter_init(void)
 		return ret;
 
 #ifdef HAVE_BDEV_MARK_DEAD
-	ret = bdevfilter_set(&ops_bdev_mark_dead, "bdev_mark_dead");
+	ret = set_functions();
 	if (ret)
 		goto out_unset_submit_bio_noacct;
 #else
@@ -684,7 +640,7 @@ static int __init bdevfilter_init(void)
 
 out_unset_all:
 #ifdef HAVE_BDEV_MARK_DEAD
-	bdevfilter_unset(&ops_bdev_mark_dead);
+	unset_functions();
 #else
 	bdevfilter_unset(&ops_bdev_disk_changed);
 out_unset_del_gendisk:
@@ -700,7 +656,7 @@ static void __exit bdevfilter_done(void)
 {
 	misc_deregister(&bdevfilter_misc);
 #ifdef HAVE_BDEV_MARK_DEAD
-	bdevfilter_unset(&ops_bdev_mark_dead);
+	unset_functions();
 #else
 	bdevfilter_unset(&ops_bdev_disk_changed);
 	bdevfilter_unset(&ops_del_gendisk);
