@@ -11,7 +11,7 @@ echo "FIO deep depth read test"
 fio --version
 blksnap_load
 blksnap_version
-blksnap_log_debug "/var/log/veeam/blksnap.log"
+blksnap_log_debug "/var/log/veeam"
 
 if [ -z $1 ]
 then

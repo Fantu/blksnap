@@ -18,8 +18,8 @@ echo "pullout test start"
 
 blksnap_load
 mkdir -p /var/log/veeam/
-rm -f /var/log/veeam/blksnap.log
-blksnap_log_debug /var/log/veeam/blksnap.log
+rm -f /var/log/veeam/*.log
+blksnap_log_debug /var/log/veeam
 
 # check module is ready
 blksnap_version

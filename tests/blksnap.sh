@@ -42,17 +42,20 @@ blksnap_version()
 
 blksnap_log_debug()
 {
-	${BLKSNAP} setlog --level 7 --filepath "$1"
+	${BLKSNAP} setlog --level 7 --filepath "$1/blksnap.log"
+	${BLKSNAP} setfilterlog --level 7 --filepath "$1/bdevfilter.log"
 }
 
 blksnap_log()
 {
-	${BLKSNAP} setlog --level 4 --filepath "$1"
+	${BLKSNAP} setlog --level 4 --filepath "$1/blksnap.log"
+	${BLKSNAP} setfilterlog --level 4 --filepath "$1/bdevfilter.log"
 }
 
 blksnap_log_disable()
 {
 	${BLKSNAP} setlog --disable
+	${BLKSNAP} setfilterlog --disable
 }
 
 blksnap_snapshot_create()
