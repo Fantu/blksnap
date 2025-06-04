@@ -280,7 +280,7 @@ static int log_processor(void *data)
 	return ret;
 }
 
-int log_restart(int level, char *filepath, int tz_minuteswest)
+int log_restart(int level, char *filepath, int tz_minuteswest, const char *thread_name)
 {
 	int ret = 0;
 	struct file* filp;
@@ -333,7 +333,7 @@ int log_restart(int level, char *filepath, int tz_minuteswest)
 		goto fail;
 	}
 
-	task = kthread_create(log_processor, NULL, "blksnaplog");
+	task = kthread_create(log_processor, NULL, thread_name);
 	if (IS_ERR(task)) {
 		ret = PTR_ERR(task);
 		goto fail;

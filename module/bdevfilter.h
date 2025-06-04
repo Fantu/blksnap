@@ -48,9 +48,32 @@ struct bdevfilter_ctl {
 	__u64 opt;
 };
 
+/**
+ * @tz_minuteswest:
+ *  Time zone offset in minutes.
+ *  The system time is in UTC. In order for the module to write local time
+ *  to the log, its offset should be specified.
+ * @level:
+ *  0 - disable logging to file
+ *  3 - only error messages
+ *  4 - log warnings
+ *  6 - log info messages
+ *  7 - log debug messages
+ * @filepath_size:
+ *  Count of bytes in &filepath.
+ * @filename:
+ *  Pointer to full path for log file.
+ */
+struct bdevfilter_setlog {
+    __s32 tz_minuteswest;
+    __s32 level;
+    __u32 filepath_size;
+    __u64 filepath;
+};
 
 #define BDEVFILTER_ATTACH	_IOWR('F', 140, struct bdevfilter_attach)
 #define BDEVFILTER_DETACH	_IOWR('F', 141, struct bdevfilter_name)
 #define BDEVFILTER_CTL		_IOWR('F', 142, struct bdevfilter_ctl)
+#define BDEVFILTER_SETLOG       _IOW ('F', 143, struct bdevfilter_setlog)
 
 #endif /* _UAPI_LINUX_BDEVFILTER_H */

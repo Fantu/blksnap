@@ -354,6 +354,8 @@ static int ioctl_mod(struct blksnap_mod __user *uarg)
 	return 0;
 }
 
+const char *log_thread_name = "blksnaplog";
+
 static int ioctl_setlog(struct blksnap_setlog __user *uarg)
 {
 	int ret = -ENOTTY;
@@ -380,7 +382,7 @@ static int ioctl_setlog(struct blksnap_setlog __user *uarg)
 		 * a negative logging level.
 		 */
 		if ((karg.level < 0) || !karg.filepath)
-			return log_restart(-1, NULL, 0);
+			return log_restart(-1, NULL, 0, log_thread_name);
 
 		if (karg.filepath_size == 0) {
 			pr_err("Invalid parameters. 'filepath_size' cannot be zero\n");
@@ -403,7 +405,7 @@ static int ioctl_setlog(struct blksnap_setlog __user *uarg)
 			return -ENODATA;
 		}
 
-		ret = log_restart(karg.level, filepath, karg.tz_minuteswest);
+		ret = log_restart(karg.level, filepath, karg.tz_minuteswest, log_thread_name);
 	}
 #endif
 	return ret;

@@ -256,6 +256,45 @@ out_free_devpath:
 	return ret;
 }
 
+const char *log_thread_name = "bdevfilterlog";
+
+static int ioctl_setlog(struct bdevfilter_setlog __user *argp)
+{
+	char *filepath = NULL;
+	struct bdevfilter_setlog karg;
+
+	if (copy_from_user(&karg, argp, sizeof(karg))) {
+		pr_err("Unable to get log parameters: invalid user buffer\n");
+		return -ENODATA;
+	}
+
+	/*
+	 * logging can be disabled
+	 * To do this, it is enough not to specify a logging file or set
+	 * a negative logging level.
+	 */
+	if ((karg.level < 0) || !karg.filepath)
+		return log_restart(-1, NULL, 0, log_thread_name);
+
+	if (karg.filepath_size == 0) {
+		pr_err("Invalid parameters. 'filepath_size' cannot be zero\n");
+		return -EINVAL;
+	}
+	filepath = kzalloc(karg.filepath_size + 1, GFP_KERNEL);
+	if (!filepath)
+		return -ENOMEM;
+
+	if (copy_from_user(filepath, (void *)karg.filepath,
+			   karg.filepath_size)) {
+		pr_err("Unable to get log filepath: invalid user buffer\n");
+
+		kfree(filepath);
+		return -ENODATA;
+	}
+
+	return log_restart(karg.level, filepath, karg.tz_minuteswest, log_thread_name);
+}
+
 void bdevfilter_free(struct kref *kref)
 {
 	struct blkfilter *flt = container_of(kref, struct blkfilter, kref);
@@ -439,12 +478,13 @@ static int __init bdevfilter_init(void)
 	int ret;
 
 	log_init();
-	//ret = log_restart(7, "/var/log/veeam/bdevfilter.log", 0);
-	ret = log_restart(-1, NULL, 0);
+	/*
+	ret = log_restart(7, "/var/log/veeam/bdevfilter.log", 0, log_tread_name);
 	if (ret) {
 		pr_err("Failed to prepare logging\n");
 		return ret;
 	}
+	*/
 	pr_debug("Loading\n");
 	pr_debug("Version: %s\n", VERSION_STR);
 
