@@ -182,6 +182,15 @@ namespace
 
         static bool SetLog(const int tz_minuteswest, const int level, const std::string& filepath)
         {
+            int ioctl_errno = 0;
+            bool ret = false;
+            int bdevfilter;
+
+            const std::string bdevfilterPath("/dev/" BDEVFILTER);
+            bdevfilter = ::open(bdevfilterPath.c_str(), O_RDWR);
+            if (bdevfilter < 0)
+                throw std::system_error(errno, std::generic_category(), "Failed to open ["+bdevfilterPath+"] device");
+
             struct bdevfilter_setlog param = { 0 };
 
             param.tz_minuteswest = tz_minuteswest;
@@ -192,14 +201,19 @@ namespace
                 param.filepath = (__u64)filepath.c_str();
             }
 
-            if (!::ioctl(m_bdevfilter, BDEVFILTER_SETLOG, &param))
-                return true;
+            if (::ioctl(bdevfilter, BDEVFILTER_SETLOG, &param))
+                ioctl_errno = errno;
+            else
+                ret = true;
 
-            if (errno == EALREADY)
-                return false;
+            ::close(bdevfilter);
 
-            throw std::system_error(errno, std::generic_category(),
-                "Failed to set filter log");
+            if (!ret)
+                if (ioctl_errno != EALREADY)
+                    throw std::system_error(errno, std::generic_category(),
+                        "Failed to set filter log");
+
+            return ret;
         }
     private:
         std::string m_devicePath;
@@ -1344,7 +1358,7 @@ public:
                 level = -1;
         }
 
-        CBlkFilterCtl::SetLog(tz_minuteswest, level, filepath)
+        CBlkFilterCtl::SetLog(tz_minuteswest, level, filepath);
     };
 };
 
