@@ -114,6 +114,7 @@ static void BlksnapThread(std::shared_ptr<CSnapshot> ptrCtl, std::shared_ptr<SSt
                     std::lock_guard<std::mutex> guard(ptrState->lock);
                     ptrState->errorMessage.push_back(std::string(noSpaceMsg));
                 }
+                break;
             default:
                 throw std::runtime_error("Invalid blksnap event code received.");
             }
@@ -162,6 +163,7 @@ CSession::CSession(const std::vector<std::string>& devices, const std::string& d
                 std::lock_guard<std::mutex> guard(m_ptrState->lock);
                 m_ptrState->errorMessage.push_back(std::string(noSpaceMsg));
             }
+            break;
         default:
             throw std::runtime_error("Invalid blksnap event code received.");
         }

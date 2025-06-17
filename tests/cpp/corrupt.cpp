@@ -243,7 +243,7 @@ void SimpleCorruption(const std::string& origDevName,
     logger.Info("version: " + GetBlksnapVersion());
     logger.Info("device: " + origDevName);
     logger.Info("diffStorage: " + diffStorage);
-    logger.Info("diffStorageLimit: " + std::to_string(diffStorageLimit) + " MiB");
+    logger.Info("diffStorageLimit: " + std::to_string(diffStorageLimit) + " bytes");
 
     auto ptrGen = std::make_shared<CTestSectorGenetor>(true);
     auto ptrOrininal = std::make_shared<CBlockDevice>(origDevName, isSync);
@@ -362,7 +362,7 @@ void CheckCorruption(const std::string& origDevName,
     logger.Info("version: " + GetBlksnapVersion());
     logger.Info("device: " + origDevName);
     logger.Info("diffStorage: " + diffStorage);
-    logger.Info("diffStorageLimit: " + std::to_string(diffStorageLimit) + " MiB");
+    logger.Info("diffStorageLimit: " + std::to_string(diffStorageLimit) + " bytes");
     logger.Info("duration: " + std::to_string(durationLimitSec) + " seconds");
 
     auto ptrGen = std::make_shared<CTestSectorGenetor>(false);
