@@ -45,6 +45,11 @@ namespace blksnap
         unsigned long long requestedSectors;
     };
 
+    struct SBlksnapEventLowFreeSpace
+    {
+        unsigned long long requestedSectors;
+    };
+
     struct SBlksnapEvent
     {
         unsigned int code;
@@ -53,6 +58,7 @@ namespace blksnap
         {
             struct SBlksnapEventCorrupted corrupted;
             struct SBlksnapEventNoSpace noSpace;
+            struct SBlksnapEventLowFreeSpace lowFreeSpace;
         };
     };
 

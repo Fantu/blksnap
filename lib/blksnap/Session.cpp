@@ -55,6 +55,7 @@ class CSession : public ISession
 public:
     CSession(const std::vector<std::string>& devices,
              const std::string& diffStorageFilePath,
+             const blksnap::SStorageRanges& storageRanges,
              const unsigned long long limit);
     ~CSession() override;
 
@@ -73,7 +74,17 @@ std::shared_ptr<ISession> ISession::Create(
     const std::string& diffStorageFilePath,
     const unsigned long long limit)
 {
-    return std::make_shared<CSession>(devices, diffStorageFilePath, limit);
+    blksnap::SStorageRanges storageRanges;
+    return std::make_shared<CSession>(devices, diffStorageFilePath, storageRanges, limit);
+}
+
+std::shared_ptr<ISession> ISession::Create(
+    const std::vector<std::string>& devices,
+    const blksnap::SStorageRanges& storageRanges,
+    const unsigned long long limit)
+{
+    std::string diffStorageFilePath;
+    return std::make_shared<CSession>(devices, diffStorageFilePath, storageRanges, limit);
 }
 
 static void BlksnapThread(std::shared_ptr<CSnapshot> ptrCtl, std::shared_ptr<SState> ptrState)
@@ -108,13 +119,24 @@ static void BlksnapThread(std::shared_ptr<CSnapshot> ptrCtl, std::shared_ptr<SSt
                     std::string("Snapshot corrupted for device " + std::to_string(ev.corrupted.origDevIdMj) + ":" + std::to_string(ev.corrupted.origDevIdMn)));
             case blksnap_event_code_no_space:
                 {
-                    const std::string noSpaceMsg = "The limit size of the difference storage has been reached";
+                    const std::string msg = "The limit size of the difference storage has been reached";
 
-                    std::cerr << noSpaceMsg << std::endl;
+                    std::cerr << msg << std::endl;
                     std::lock_guard<std::mutex> guard(ptrState->lock);
-                    ptrState->errorMessage.push_back(std::string(noSpaceMsg));
+                    ptrState->errorMessage.push_back(std::string(msg));
                 }
                 break;
+#ifdef BLKSNAP_MODIFICATION
+            case blksnap_event_code_low_free_space:
+                {
+                    const std::string msg = "The request to increase the difference storage has been received";
+
+                    std::cerr << msg << std::endl;
+                    std::lock_guard<std::mutex> guard(ptrState->lock);
+                    ptrState->errorMessage.push_back(std::string(msg));
+                }
+                break;
+#endif
             default:
                 throw std::runtime_error("Invalid blksnap event code received.");
             }
@@ -128,13 +150,29 @@ static void BlksnapThread(std::shared_ptr<CSnapshot> ptrCtl, std::shared_ptr<SSt
     }
 }
 
-CSession::CSession(const std::vector<std::string>& devices, const std::string& diffStorageFilePath, const unsigned long long limit)
+CSession::CSession(const std::vector<std::string>& devices, const std::string& diffStorageFilePath, const SStorageRanges& diffStorageRanges, const unsigned long long limit)
 {
     for (const auto& name : devices)
         CTracker(name).Attach();
 
     // Create snapshot
-    m_ptrSnapshot = CSnapshot::Create(diffStorageFilePath, limit);
+    if (!diffStorageFilePath.empty())
+        m_ptrSnapshot = CSnapshot::Create(diffStorageFilePath, limit);
+    else if (!diffStorageRanges.ranges.empty()){
+        m_ptrSnapshot = CSnapshot::Create(limit);
+
+        std::vector<struct blksnap_sectors> sectors;
+        for (const SRange& rg : diffStorageRanges.ranges)
+        {
+            struct blksnap_sectors sect = {
+                .offset = rg.sector,
+                .count = rg.count
+            };
+            sectors.push_back(sect);
+        }
+
+        m_ptrSnapshot->AppendStorage(diffStorageRanges.device, sectors.data(), sectors.size());
+    }
 
     // Add devices to snapshot
     for (const auto& name : devices)
@@ -164,6 +202,17 @@ CSession::CSession(const std::vector<std::string>& devices, const std::string& d
                 m_ptrState->errorMessage.push_back(std::string(noSpaceMsg));
             }
             break;
+#ifdef BLKSNAP_MODIFICATION
+        case blksnap_event_code_low_free_space:
+            {
+                const std::string msg = "The request to increase the difference storage has been received";
+
+                std::cerr << msg << std::endl;
+                std::lock_guard<std::mutex> guard(m_ptrState->lock);
+                m_ptrState->errorMessage.push_back(std::string(msg));
+            }
+            break;
+#endif
         default:
             throw std::runtime_error("Invalid blksnap event code received.");
         }

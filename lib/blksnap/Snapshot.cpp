@@ -138,9 +138,9 @@ bool CSnapshot::WaitEvent(unsigned int timeoutMs, SBlksnapEvent& ev)
 #ifdef BLKSNAP_MODIFICATION
     case blksnap_event_code_low_free_space:
     {
-        struct blksnap_event_no_space* noSpace = (struct blksnap_event_no_space*)(param.data);
+        struct blksnap_event_no_space* data = (struct blksnap_event_no_space*)(param.data);
 
-        ev.noSpace.requestedSectors = noSpace->requested_nr_sect;
+        ev.lowFreeSpace.requestedSectors = data->requested_nr_sect;
         break;
     }
 #endif

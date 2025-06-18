@@ -29,6 +29,11 @@ add_executable(${TEST_CORRUPT} TestSector.cpp corrupt.cpp)
 target_link_libraries(${TEST_CORRUPT} PRIVATE ${TESTS_LIBS})
 target_include_directories(${TEST_CORRUPT} PRIVATE ./)
 
+set(TEST_CORRUPT test_diff_storage)
+add_executable(${TEST_CORRUPT} TestSector.cpp diff_storage.cpp)
+target_link_libraries(${TEST_CORRUPT} PRIVATE ${TESTS_LIBS})
+target_include_directories(${TEST_CORRUPT} PRIVATE ./)
+
 set(TEST_CBT test_cbt)
 add_executable(${TEST_CBT} cbt.cpp)
 target_link_libraries(${TEST_CBT} PRIVATE ${TESTS_LIBS})

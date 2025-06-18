@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0+
-#if 0
+
 #include <algorithm>
 #include <cstdlib>
 #include <blksnap/Service.h>
@@ -21,7 +21,7 @@ namespace po = boost::program_options;
 using blksnap::sector_t;
 using blksnap::SRange;
 
-int g_blksz = 512;
+int g_blksz = 4096;
 
 //#define PAGE_SECTORS_SHIFT  (PAGE_SHIFT - SECTOR_SHIFT)
 //#define PAGE_SECTORS        (1 << PAGE_SECTORS_SHIFT)
@@ -214,6 +214,16 @@ static void GenerateRandomRanges(std::shared_ptr<CBlockDevice> ptrOrininal,
     }
 }
 
+static unsigned long long RangesTotalLength(const std::vector<SRange>& ranges)
+{
+    sector_t totalSectors = 0;
+
+    for (const SRange& rg : ranges)
+        totalSectors += rg.count;
+
+    return totalSectors * SECTOR_SIZE;
+}
+
 static void LogRanges(const std::string& header, const std::vector<SRange>& ranges)
 {
     sector_t totalSectors = 0;
@@ -227,12 +237,24 @@ static void LogRanges(const std::string& header, const std::vector<SRange>& rang
     logger.Info("Total sectors: " + std::to_string(totalSectors));
 }
 
+static inline std::string GetBlksnapVersion()
+{
+    unsigned short major, minor, revision, build;
+
+    blksnap::CService().Version(major, minor, revision, build);
+    return std::to_string(major) + "." +
+           std::to_string(minor) + "." +
+           std::to_string(revision) + "." +
+           std::to_string(build);
+}
+
 static void CheckDiffStorage(const std::string& origDevName, const int durationLimitSec, const bool isSync)
 {
+    unsigned long long diffStorageLimit;
     std::vector<SRange> diffStorage;
 
     logger.Info("--- Test: diff storage ---");
-    logger.Info("version: " + blksnap::Version());
+    logger.Info("version: " + GetBlksnapVersion());
     logger.Info("device: " + origDevName);
     logger.Info("duration: " + std::to_string(durationLimitSec) + " seconds");
 
@@ -294,7 +316,7 @@ static void CheckDiffStorage(const std::string& origDevName, const int durationL
 
         logger.Info("-- Create snapshot");
 
-        auto ptrSession = blksnap::ISession::Create(devices, diffStorageRanges);
+        auto ptrSession = blksnap::ISession::Create(devices, diffStorageRanges, RangesTotalLength(diffStorageRanges.ranges));
 
         int testSeqNumber = ptrGen->GetSequenceNumber();
         clock_t testSeqTime = std::clock();
@@ -374,7 +396,7 @@ void Main(int argc, char* argv[])
         ("device,d", po::value<std::string>(), "Device name. ")
         ("duration,u", po::value<int>()->default_value(5), "The test duration limit in minutes.")
         ("sync", "Use O_SYNC for access to original device.")
-        ("blksz", po::value<int>()->default_value(512), "Align reads and writes to the block size.");
+        ("blksz", po::value<int>()->default_value(4096), "Align reads and writes to the block size.");
     po::variables_map vm;
     po::parsed_options parsed = po::command_line_parser(argc, argv).options(desc).run();
     po::store(parsed, vm);
@@ -431,4 +453,4 @@ int main(int argc, char* argv[])
 
     return 0;
 }
-#endif
+

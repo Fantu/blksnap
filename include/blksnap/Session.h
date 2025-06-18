@@ -33,10 +33,16 @@ namespace blksnap
         virtual ~ISession() = default;
 
         virtual bool GetError(std::string& errorMessage) = 0;
-
+        /* New prefered method */
         static std::shared_ptr<ISession> Create(
             const std::vector<std::string>& devices,
             const std::string& diffStorageFilePath,
+            const unsigned long long limit);
+
+        /* Old legacy method */
+        static std::shared_ptr<ISession> Create(
+            const std::vector<std::string>& devices,
+            const blksnap::SStorageRanges& storageRanges,
             const unsigned long long limit);
     };
 
