@@ -26,9 +26,9 @@ check_installed()
 {
   if [ -z "$(dkms status -m %{name} -v %{version} -k $(uname -r) | grep 'installed')" ]
   then
-    echo "WARNING: [TBD]Module "%{name}" is not installed for kernel $(uname -r)"
-    echo "WARNING: [TBD]Install the 'kernel-devel-$(uname -r)' package into the system."
-    echo "WARNING: [TBD]Or install latest 'kernel' and 'kernel-devel' packages and reboot the system."
+    echo "ERROR: [TBD]Module "%{name}" is not installed for kernel $(uname -r)"
+    echo "ERROR: [TBD]Install the 'kernel-devel-$(uname -r)' package into the system."
+    echo "ERROR: [TBD]Or install latest 'kernel' and 'kernel-devel' packages and reboot the system."
     exit 1
   fi
 }
