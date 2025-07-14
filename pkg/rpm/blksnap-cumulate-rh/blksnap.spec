@@ -87,12 +87,12 @@ then
 				then
 					echo "[TBD]The Veeam Software certificate is installed."
 				else
-					echo "WARNING: [TBD]The Veeam Software certificate should be installed."
-					echo "WARNING: [TBD]Please install 'veeam-ueficert' package and complete MOK enrollment to continue."
+					echo "DEPLOY_WARNING: [TBD]The Veeam Software certificate should be installed."
+					echo "DEPLOY_WARNING: [TBD]Please install 'veeam-ueficert' package and complete MOK enrollment to continue."
 				fi
 			else
-				echo "WARNING: [TBD]The 'mokutil' is not installed."
-				echo "WARNING: [TBD]Please install 'mokutil' package, install 'veeam-ueficert' package and complete MOK enrollment to continue."
+				echo "DEPLOY_WARNING: [TBD]The 'mokutil' is not installed."
+				echo "DEPLOY_WARNING: [TBD]Please install 'mokutil' package, install 'veeam-ueficert' package and complete MOK enrollment to continue."
 			fi
 		fi
 	fi
